@@ -259,3 +259,6 @@ if [[ -z $limine_config && $boot_grub == "false" ]]; then
   echo "Error: neither Limine nor GRUB is installed" >&2
   exit 1
 fi
+
+omarchy-branding-color || true
+

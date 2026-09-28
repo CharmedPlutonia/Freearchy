@@ -12,6 +12,8 @@
 @define-color popover_fg_color {{ foreground }};
 @define-color sidebar_bg_color {{ background }};
 @define-color sidebar_fg_color {{ foreground }};
+@define-color sidebar_backdrop_color #12121b;
+@define-color sidebar_shade_color #12121b;
 @define-color theme_bg_color {{ background }};
 @define-color theme_fg_color {{ foreground }};
 @define-color theme_selected_bg_color {{ selection_background }};
@@ -42,4 +44,18 @@ tooltip,
 .sidebar,
 .navigation-sidebar {
   border-radius: 0;
+}
+
+/* Nautilus grays the sidebar to #2c2b32 when the window is unfocused.
+   Keep the focused sidebar on the theme background. If it changes, go darker. */
+.navigation-sidebar:backdrop,
+placessidebar:backdrop,
+.sidebar:backdrop,
+sidebar:backdrop,
+window:backdrop .navigation-sidebar,
+window:backdrop placessidebar,
+window:backdrop .sidebar,
+window:backdrop sidebar {
+  background-color: #12121b;
+  color: @sidebar_fg_color;
 }

@@ -23,6 +23,12 @@ gsettings set org.gnome.desktop.interface icon-theme "$icon_theme"
 # GTK apps follow the Omarchy palette and stay square.
 mkdir -p ~/.config/gtk-3.0 ~/.config/gtk-4.0
 theme_css=~/.config/omarchy/current/theme/gtk.css
+if [[ -f ~/.config/omarchy/current/theme/light.mode && -f $theme_css ]]; then
+  light_bg="$(awk -F'"' '/^background[[:space:]]*=/{print $2; exit}' ~/.config/omarchy/current/theme/colors.toml)"
+  if [[ $light_bg =~ ^#[0-9A-Fa-f]{6}$ ]]; then
+    sed -i "s/#12121b/${light_bg}/g" "$theme_css"
+  fi
+fi
 if [[ -f $theme_css ]]; then
   cp "$theme_css" ~/.config/gtk-3.0/gtk.css
   cp "$theme_css" ~/.config/gtk-4.0/gtk.css

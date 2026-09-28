@@ -20,7 +20,7 @@ EOF
 )
 
 clear
-echo -e "\n$ansi_art\n"
+echo -e "\n\033[38;2;32;223;241m${ansi_art}\033[0m\n"
 
 # Use the Freearchy testing branch. Do not follow upstream Omarchy master or its package mirrors.
 OMARCHY_REF="${OMARCHY_REF:-testing}"
@@ -30,7 +30,7 @@ sudo pacman -Syu --noconfirm --needed git
 OMARCHY_REPO="${OMARCHY_REPO:-CharmedPlutonia/Freearchy}"
 
 echo -e "\nCloning Freearchy testing from: https://github.com/${OMARCHY_REPO}.git"
-echo -e "\e[32mUsing branch: $OMARCHY_REF\e[0m"
+echo -e "\033[38;2;32;223;241mUsing branch: $OMARCHY_REF\033[0m"
 rm -rf ~/.local/share/omarchy/
 git clone --branch "$OMARCHY_REF" "https://github.com/${OMARCHY_REPO}.git" ~/.local/share/omarchy >/dev/null
 

@@ -1,0 +1,78 @@
+#!/bin/bash
+
+# omarchy:summary=Recolor Freearchy branding to the current theme accent
+# omarchy:hidden=true
+
+# Installer and boot branding default to #20dff1 until a theme is applied.
+# The waybar mark follows that theme's bar text, not the accent.
+
+DEFAULT_BRAND="#20dff1"
+THEME_DIR="${HOME}/.config/omarchy/current/theme"
+BRAND_FILE="${HOME}/.config/omarchy/branding/accent"
+
+hex_ok() {
+  [[ ${1:-} =~ ^#[0-9A-Fa-f]{6}$ ]]
+}
+
+read_toml() {
+  local key="$1"
+  [[ -f $THEME_DIR/colors.toml ]] || return 0
+  awk -F'"' -v key="$key" '$1 ~ "^" key "[[:space:]]*=" { print $2; exit }' "$THEME_DIR/colors.toml"
+}
+
+ACCENT="$(read_toml accent)"
+hex_ok "$ACCENT" || ACCENT="$DEFAULT_BRAND"
+
+WAYBAR_FG="$(sed -n 's/.*@define-color foreground[[:space:]]*\(#[0-9A-Fa-f]\{6\}\).*/\1/p' "$THEME_DIR/waybar.css" 2>/dev/null | head -1)"
+hex_ok "$WAYBAR_FG" || WAYBAR_FG="$(read_toml foreground)"
+hex_ok "$WAYBAR_FG" || WAYBAR_FG="$ACCENT"
+
+recolor() {
+  local src="$1" dst="$2" color="$3"
+  [[ -f $src ]] || return 0
+  command -v magick >/dev/null || return 0
+  local tmp
+  tmp="$(mktemp --suffix=.png)"
+  magick "$src" -channel RGB +level-colors "$color","$color" "$tmp"
+  if [[ $dst == /usr/* || $dst == /boot/* ]]; then
+    sudo mkdir -p "$(dirname "$dst")"
+    sudo cp "$tmp" "$dst"
+  else
+    mkdir -p "$(dirname "$dst")"
+    cp "$tmp" "$dst"
+  fi
+  rm -f "$tmp"
+}
+
+recolor "$OMARCHY_PATH/config/waybar/freearchy.png" "${HOME}/.config/waybar/freearchy.png" "$WAYBAR_FG"
+recolor "$OMARCHY_PATH/default/plymouth/logo.png" /usr/share/plymouth/themes/omarchy/logo.png "$ACCENT"
+recolor "$OMARCHY_PATH/default/plymouth/logo.png" /usr/share/sddm/themes/omarchy/logo.png "$ACCENT"
+
+if sudo test -f /boot/limine.conf; then
+  sudo sed -i -E \
+    -e "s/^(interface_branding_color:).*/\\1 ${ACCENT#\#}/" \
+    -e "s/^(interface_help_color:).*/\\1 ${ACCENT#\#}/" \
+    -e "s/^(interface_help_color_bright:).*/\\1 ${ACCENT#\#}/" \
+    /boot/limine.conf
+fi
+
+mkdir -p "${HOME}/.config/omarchy/branding"
+PREVIOUS="$(<"$BRAND_FILE" 2>/dev/null || true)"
+hex_ok "$PREVIOUS" || PREVIOUS=""
+FF="${HOME}/.config/fastfetch/config.jsonc"
+if [[ -f $FF && $ACCENT != "$DEFAULT_BRAND" || -n $PREVIOUS ]]; then
+  if [[ -f $FF ]]; then
+    sed -i "s/\"green\"/\"${ACCENT}\"/g" "$FF"
+    if [[ -n $PREVIOUS && $PREVIOUS != "$ACCENT" ]]; then
+      sed -i "s|${PREVIOUS}|${ACCENT}|g" "$FF"
+    fi
+    if [[ $DEFAULT_BRAND != "$ACCENT" ]]; then
+      sed -i "s|${DEFAULT_BRAND}|${ACCENT}|g" "$FF"
+    fi
+  fi
+fi
+printf '%s\n' "$ACCENT" >"$BRAND_FILE"
+
+if [[ -d /usr/share/plymouth/themes/omarchy && -z ${OMARCHY_INSTALL_LOG_FILE:-} ]]; then
+  sudo mkinitcpio -P >/dev/null || true
+fi

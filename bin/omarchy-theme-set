@@ -50,6 +50,7 @@ if [[ $OMARCHY_THEME_SKIP_BACKGROUND != "1" ]]; then
 fi
 
 # Restart components to apply new theme
+omarchy-branding-color || true
 if pgrep -x waybar >/dev/null; then
   omarchy-restart-waybar
 fi

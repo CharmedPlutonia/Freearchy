@@ -3,7 +3,7 @@
   "logo": {
     "type": "file",
     "source": "~/.config/omarchy/branding/about.txt",
-    "color": { "1": "green" },
+    "color": { "1": "#20dff1" },
     "padding": {
       "top": 2,
       "right": 6,
@@ -19,39 +19,39 @@
     {
       "type": "host",
       "key": " PC",
-      "keyColor": "green"
+      "keyColor": "#20dff1"
     },
     {
       "type": "cpu",
       "key": "│ ├",
       "showPeCoreCount": true,
-      "keyColor": "green"
+      "keyColor": "#20dff1"
     },
     {
       "type": "gpu",
       "key": "│ ├",
       "detectionMethod": "pci",
-      "keyColor": "green"
+      "keyColor": "#20dff1"
     },
     {
       "type": "display",
       "key": "│ ├󱄄",
-      "keyColor": "green"
+      "keyColor": "#20dff1"
     },
     {
       "type": "disk",
       "key": "│ ├󰋊",
-      "keyColor": "green"
+      "keyColor": "#20dff1"
     },
     {
       "type": "memory",
       "key": "│ ├",
-      "keyColor": "green"
+      "keyColor": "#20dff1"
     },
     {
       "type": "swap",
       "key": "└ └󰓡 ",
-      "keyColor": "green"
+      "keyColor": "#20dff1"
     },
     {
       "type": "custom",

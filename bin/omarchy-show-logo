@@ -3,7 +3,15 @@
 # omarchy:summary=Display the Freearchy logo in the terminal.
 
 clear
-echo -e "\033[32m"
+hex="#20dff1"
+if [[ -f ${HOME}/.config/omarchy/current/theme/colors.toml ]]; then
+  theme_hex="$(awk -F'"' '/^accent[[:space:]]*=/{print $2; exit}' "${HOME}/.config/omarchy/current/theme/colors.toml")"
+  [[ $theme_hex =~ ^#[0-9A-Fa-f]{6}$ ]] && hex="$theme_hex"
+fi
+r=$((16#${hex:1:2}))
+g=$((16#${hex:3:2}))
+b=$((16#${hex:5:2}))
+echo -e "\033[38;2;${r};${g};${b}m"
 cat <~/.local/share/omarchy/logo.txt
 echo -e "\033[0m"
 echo
