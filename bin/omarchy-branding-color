@@ -57,19 +57,20 @@ if sudo test -f /boot/limine.conf; then
 fi
 
 mkdir -p "${HOME}/.config/omarchy/branding"
-PREVIOUS="$(<"$BRAND_FILE" 2>/dev/null || true)"
-hex_ok "$PREVIOUS" || PREVIOUS=""
+ABOUT="${HOME}/.config/omarchy/branding/about.txt"
+if [[ ! -f $ABOUT && -f $OMARCHY_PATH/icon.txt ]]; then
+  cp "$OMARCHY_PATH/icon.txt" "$ABOUT"
+fi
+if [[ -f $ABOUT ]] && ! grep -q '\$1' "$ABOUT"; then
+  sed -i '1s/^/$1/' "$ABOUT"
+fi
+
 FF="${HOME}/.config/fastfetch/config.jsonc"
-if [[ -f $FF && $ACCENT != "$DEFAULT_BRAND" || -n $PREVIOUS ]]; then
-  if [[ -f $FF ]]; then
-    sed -i "s/\"green\"/\"${ACCENT}\"/g" "$FF"
-    if [[ -n $PREVIOUS && $PREVIOUS != "$ACCENT" ]]; then
-      sed -i "s|${PREVIOUS}|${ACCENT}|g" "$FF"
-    fi
-    if [[ $DEFAULT_BRAND != "$ACCENT" ]]; then
-      sed -i "s|${DEFAULT_BRAND}|${ACCENT}|g" "$FF"
-    fi
-  fi
+if [[ -f $FF ]]; then
+  accent_hex="${ACCENT#\#}"
+  accent_ansi=$(printf '38;2;%d;%d;%d' "0x${accent_hex:0:2}" "0x${accent_hex:2:2}" "0x${accent_hex:4:2}")
+  sed -i -E "s/(\"1\": \")[^\"]+/\1${accent_ansi}/" "$FF"
+  sed -i -E "s/(\"keyColor\": \")(#[0-9A-Fa-f]{6}|green|38;2;[0-9]+;[0-9]+;[0-9]+)\"/\1${accent_ansi}\"/" "$FF"
 fi
 printf '%s\n' "$ACCENT" >"$BRAND_FILE"
 
