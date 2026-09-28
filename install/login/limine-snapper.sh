@@ -20,11 +20,72 @@ configure_snapper_root() {
     return 0
   fi
 
-  if ! sudo snapper list-configs 2>/dev/null | grep -q "root"; then
-    sudo snapper -c root create-config /
+  if ! command -v snapper >/dev/null; then
+    echo "snapper is not installed; skipping snapshot config"
+    return 0
   fi
-  sudo cp "$OMARCHY_PATH/default/snapper/root" /etc/snapper/configs/root
+
+  sudo mkdir -p /etc/snapper/configs
+  if ! sudo snapper list-configs 2>/dev/null | grep -q "root"; then
+    sudo snapper -c root create-config / || true
+  fi
+  if [[ -d /etc/snapper/configs ]]; then
+    sudo cp "$OMARCHY_PATH/default/snapper/root" /etc/snapper/configs/root
+  fi
   sudo btrfs quota disable / 2>/dev/null || true
+}
+
+limine_has_entry() {
+  sudo grep -Eq '^/\+?[^/+[:space:]]' /boot/limine.conf
+}
+
+collect_cmdline() {
+  local cmdline="$1"
+  local uuid opts subvol extra dropin
+
+  if [[ -z $cmdline ]]; then
+    uuid=$(findmnt -n -o UUID /)
+    opts=$(findmnt -n -o OPTIONS / || true)
+    subvol=$(grep -oE 'subvol=[^, ]+' <<<"${opts:-}" || true)
+    cmdline="root=UUID=${uuid} rw"
+    [[ -n $subvol ]] && cmdline+=" rootflags=${subvol}"
+  fi
+
+  for dropin in /etc/limine-entry-tool.d/*.conf; do
+    [[ -f $dropin ]] || continue
+    extra=$(sed -n 's/.*KERNEL_CMDLINE\[default\]+="\([^"]*\)".*/\1/p' "$dropin")
+    [[ -n $extra ]] && cmdline+=" $extra"
+  done
+
+  if [[ $cmdline != *quiet* ]]; then
+    cmdline+=" quiet splash loglevel=0 systemd.show_status=false rd.udev.log_level=0 vt.global_cursor_default=0"
+  fi
+
+  printf '%s\n' "$cmdline"
+}
+
+write_limine_entries() {
+  local cmdline="$1"
+  local wrote=0 kern name base
+
+  sudo sed -i 's/^default_entry: 2$/default_entry: 1/' /boot/limine.conf
+
+  shopt -s nullglob
+  for kern in /boot/vmlinuz-*; do
+    name=$(basename "$kern")
+    name=${name#vmlinuz-}
+    [[ -f /boot/initramfs-${name}.img ]] || continue
+    base=${kern#/boot}
+    printf '/Freearchy (%s)\n    protocol: linux\n    path: boot():%s\n    cmdline: %s\n    module_path: boot():/initramfs-%s.img\n\n' \
+      "$name" "$base" "$cmdline" "$name" | sudo tee -a /boot/limine.conf >/dev/null
+    wrote=1
+  done
+  shopt -u nullglob
+
+  if ((wrote == 0)); then
+    echo "No /boot/vmlinuz-* kernel found for a Limine entry" >&2
+    return 1
+  fi
 }
 
 find_limine_config() {
@@ -57,21 +118,13 @@ append_grub_cmdline() {
 setup_limine() {
   local limine_config="$1"
 
-  sudo tee /etc/mkinitcpio.conf.d/omarchy_hooks.conf <<EOF >/dev/null
-HOOKS=(base udev plymouth keyboard autodetect microcode modconf kms keymap consolefont block encrypt filesystems fsck btrfs-overlayfs)
-FILES+=(/etc/vconsole.conf)
-EOF
-  sudo tee /etc/mkinitcpio.conf.d/thunderbolt_module.conf <<EOF >/dev/null
-MODULES+=(thunderbolt)
-EOF
-
   [[ -d /sys/firmware/efi ]] && EFI=true
 
   local CMDLINE
   CMDLINE=$(sudo grep "^[[:space:]]*cmdline:" "$limine_config" | head -1 | sed 's/^[[:space:]]*cmdline:[[:space:]]*//')
+  CMDLINE=$(collect_cmdline "$CMDLINE")
 
-  # Write /etc/default/limine *before* installing limine-mkinitcpio-hook, whose
-  # post-transaction deploy hook runs limine-install and reads this file.
+  # limine-mkinitcpio-hook reads this during its install hook.
   sudo cp "$OMARCHY_PATH/default/limine/default.conf" /etc/default/limine
   sudo sed -i "s|@@CMDLINE@@|$CMDLINE|g" /etc/default/limine
 
@@ -84,23 +137,53 @@ EOF
     sudo sed -i '/^ENABLE_UKI=/d; /^ENABLE_LIMINE_FALLBACK=/d' /etc/default/limine
   fi
 
+  # These two are AUR packages. The Arch limine package does not ship
+  # limine-update. A failed build must not abort the install.
+  if [[ $(findmnt -n -o FSTYPE /) == "btrfs" ]]; then
+    omarchy-pkg-add snapper || echo "Warning: snapper was not installed"
+  fi
+  omarchy-pkg-add limine-mkinitcpio-hook || echo "Warning: limine-mkinitcpio-hook was not installed. A static Limine entry will be written."
+  omarchy-pkg-add limine-snapper-sync || echo "Warning: limine-snapper-sync was not installed. Snapshot entries will be skipped."
+
+  local hooks="base udev plymouth keyboard autodetect microcode modconf kms keymap consolefont block encrypt filesystems fsck"
+  if [[ -f /usr/lib/initcpio/install/btrfs-overlayfs ]]; then
+    hooks+=" btrfs-overlayfs"
+  fi
+  sudo mkdir -p /etc/mkinitcpio.conf.d
+  sudo tee /etc/mkinitcpio.conf.d/omarchy_hooks.conf <<EOF >/dev/null
+HOOKS=(${hooks})
+FILES+=(/etc/vconsole.conf)
+EOF
+  if [[ ! -f /etc/mkinitcpio.conf.d/thunderbolt_module.conf ]]; then
+    sudo tee /etc/mkinitcpio.conf.d/thunderbolt_module.conf <<'EOF' >/dev/null
+MODULES+=(thunderbolt)
+EOF
+  fi
+
   if [[ $limine_config != "/boot/limine.conf" ]]; then
     sudo rm -f "$limine_config"
   fi
 
   sudo cp "$OMARCHY_PATH/default/limine/limine.conf" /boot/limine.conf
 
-  sudo pacman -S --noconfirm --needed limine-snapper-sync limine-mkinitcpio-hook
   configure_snapper_root
-  chrootable_systemctl_enable limine-snapper-sync.service
+  if [[ -f /usr/lib/systemd/system/limine-snapper-sync.service ]]; then
+    chrootable_systemctl_enable limine-snapper-sync.service || echo "Warning: could not enable limine-snapper-sync"
+  fi
 
   reenable_mkinitcpio_hooks
 
-  if ! sudo grep -q "^/+" /boot/limine.conf; then
-    sudo limine-update
+  if command -v limine-update >/dev/null; then
+    sudo limine-update || echo "Warning: limine-update failed"
   fi
 
-  if ! sudo grep -q "^/+" /boot/limine.conf; then
+  if ! limine_has_entry; then
+    echo "Writing a static Limine boot entry"
+    write_limine_entries "$CMDLINE" || true
+    sudo mkinitcpio -P || echo "Warning: mkinitcpio failed"
+  fi
+
+  if ! limine_has_entry; then
     echo "Error: failed to add boot entries to /boot/limine.conf" >&2
     exit 1
   fi
