@@ -2,15 +2,16 @@
 mkdir -p ~/.local/state/omarchy
 touch ~/.local/state/omarchy/first-run.mode
 
-# Setup sudo-less access for first-run
+# Narrow first-login sudo. systemctl itself is not granted: an unrestricted
+# systemctl rule can start a root service. This file is removed when first-run finishes.
 sudo tee /etc/sudoers.d/first-run >/dev/null <<EOF
-Cmnd_Alias FIRST_RUN_CLEANUP = /bin/rm -f /etc/sudoers.d/first-run
-Cmnd_Alias SYMLINK_RESOLVED = /usr/bin/ln -sf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
-$USER ALL=(ALL) NOPASSWD: /usr/bin/systemctl
+$USER ALL=(ALL) NOPASSWD: /usr/bin/systemctl enable ufw
 $USER ALL=(ALL) NOPASSWD: /usr/bin/ufw
 $USER ALL=(ALL) NOPASSWD: /usr/bin/ufw-docker
-$USER ALL=(ALL) NOPASSWD: /usr/bin/gtk-update-icon-cache
-$USER ALL=(ALL) NOPASSWD: SYMLINK_RESOLVED
-$USER ALL=(ALL) NOPASSWD: FIRST_RUN_CLEANUP
+$USER ALL=(ALL) NOPASSWD: /usr/bin/gtk-update-icon-cache /usr/share/icons/Yaru
+$USER ALL=(ALL) NOPASSWD: /usr/bin/ln -sf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
+$USER ALL=(ALL) NOPASSWD: /usr/bin/rm -f /etc/sudoers.d/first-run
+$USER ALL=(ALL) NOPASSWD: /usr/bin/rm -f /etc/sudoers.d/99-omarchy-installer-reboot
+$USER ALL=(ALL) NOPASSWD: /usr/bin/test -f /etc/sudoers.d/99-omarchy-installer-reboot
 EOF
 sudo chmod 440 /etc/sudoers.d/first-run

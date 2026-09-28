@@ -1,5 +1,4 @@
-# Ensure timezone can be updated without needing to sudo
-sudo tee /etc/sudoers.d/omarchy-tzupdate >/dev/null <<EOF
-%wheel ALL=(root) NOPASSWD: /usr/bin/tzupdate, /usr/bin/timedatectl
-EOF
-sudo chmod 0440 /etc/sudoers.d/omarchy-tzupdate
+# Timezone changes use sudo timedatectl and ask for a password.
+if [[ -f /etc/sudoers.d/omarchy-tzupdate ]]; then
+  sudo rm -f /etc/sudoers.d/omarchy-tzupdate
+fi

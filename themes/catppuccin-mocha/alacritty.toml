@@ -1,12 +1,12 @@
 [colors.primary]
 background = "#1e1e2e"
-foreground = "#cdd6f4"
-dim_foreground = "#7f849c"
-bright_foreground = "#cdd6f4"
+foreground = "#cba6f7"
+dim_foreground = "#b4befe"
+bright_foreground = "#cba6f7"
 
 [colors.cursor]
 text = "#1e1e2e"
-cursor = "#f5e0dc"
+cursor = "#cba6f7"
 
 [colors.vi_mode_cursor]
 text = "#1e1e2e"

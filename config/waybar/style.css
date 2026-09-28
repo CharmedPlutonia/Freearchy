@@ -63,6 +63,14 @@ tooltip {
   font-size: 10px;
 }
 
+#custom-omarchy {
+  background-image: url("freearchy.png");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 16px 16px;
+  min-width: 18px;
+}
+
 #clock {
   margin-left: 8.75px;
 }

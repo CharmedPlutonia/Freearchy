@@ -5,6 +5,11 @@
 
 set -e
 
+cleanup_first_run_sudo() {
+  sudo rm -f /etc/sudoers.d/first-run /etc/sudoers.d/99-omarchy-installer-reboot 2>/dev/null || true
+}
+trap cleanup_first_run_sudo EXIT
+
 FIRST_RUN_MODE=~/.local/state/omarchy/first-run.mode
 
 if [[ -f $FIRST_RUN_MODE ]]; then
