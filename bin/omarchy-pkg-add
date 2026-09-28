@@ -1,0 +1,52 @@
+#!/bin/bash
+
+# omarchy:summary=Install Arch packages if they are missing, falling back to the AUR
+# omarchy:args=<packages...>
+# omarchy:examples=omarchy pkg add jq ripgrep
+# omarchy:requires-sudo=true
+
+ensure_yay() {
+  command -v yay >/dev/null && return 0
+  sudo pacman -S --noconfirm --needed base-devel git || return 1
+  local tmp
+  tmp=$(mktemp -d)
+  git clone --depth 1 https://aur.archlinux.org/yay-bin.git "$tmp/yay-bin" || return 1
+  (cd "$tmp/yay-bin" && makepkg -si --noconfirm) || return 1
+  rm -rf "$tmp"
+}
+
+if (($# == 0)); then
+  exit 0
+fi
+
+official=()
+aur=()
+for pkg in "$@"; do
+  if pacman -Q "$pkg" &>/dev/null; then
+    continue
+  fi
+  if pacman -Si "$pkg" &>/dev/null || pacman -Sg "$pkg" &>/dev/null; then
+    official+=("$pkg")
+  else
+    aur+=("$pkg")
+  fi
+done
+
+if ((${#official[@]})); then
+  sudo pacman -S --noconfirm --needed "${official[@]}" || exit 1
+fi
+
+if ((${#aur[@]})); then
+  ensure_yay || exit 1
+  yay -S --noconfirm --needed "${aur[@]}" || exit 1
+fi
+
+for pkg in "$@"; do
+  if pacman -Q "$pkg" &>/dev/null || pacman -Sg "$pkg" &>/dev/null; then
+    continue
+  fi
+  echo -e "\033[31mError: Package '$pkg' did not install\033[0m" >&2
+  exit 1
+done
+
+exit 0

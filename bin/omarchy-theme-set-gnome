@@ -1,0 +1,51 @@
+#!/bin/bash
+
+# omarchy:summary=Apply the current theme to GNOME color mode and icon settings
+# omarchy:hidden=true
+
+if [[ -f ~/.config/omarchy/current/theme/light.mode ]]; then
+  gsettings set org.gnome.desktop.interface color-scheme "prefer-light"
+  gsettings set org.gnome.desktop.interface gtk-theme "Adwaita"
+else
+  gsettings set org.gnome.desktop.interface color-scheme "prefer-dark"
+  gsettings set org.gnome.desktop.interface gtk-theme "Adwaita-dark"
+fi
+
+# Change gnome icon theme color
+GNOME_ICONS_THEME=~/.config/omarchy/current/theme/icons.theme
+if [[ -f $GNOME_ICONS_THEME ]]; then
+  icon_theme="$(<$GNOME_ICONS_THEME)"
+else
+  icon_theme="Yaru-blue"
+fi
+gsettings set org.gnome.desktop.interface icon-theme "$icon_theme"
+
+# GTK apps follow the Omarchy palette and stay square.
+mkdir -p ~/.config/gtk-3.0 ~/.config/gtk-4.0
+theme_css=~/.config/omarchy/current/theme/gtk.css
+if [[ -f $theme_css ]]; then
+  cp "$theme_css" ~/.config/gtk-3.0/gtk.css
+  cp "$theme_css" ~/.config/gtk-4.0/gtk.css
+else
+  printf '* {\n  border-radius: 0;\n}\n' > ~/.config/gtk-3.0/gtk.css
+  cp ~/.config/gtk-3.0/gtk.css ~/.config/gtk-4.0/gtk.css
+fi
+
+if [[ -f ~/.config/omarchy/current/theme/light.mode ]]; then
+  gtk_theme="Adwaita"
+  prefer_dark=0
+else
+  gtk_theme="Adwaita-dark"
+  prefer_dark=1
+fi
+
+for settings in ~/.config/gtk-3.0/settings.ini ~/.config/gtk-4.0/settings.ini; do
+  cat > "$settings" <<EOF
+[Settings]
+gtk-theme-name=$gtk_theme
+gtk-icon-theme-name=$icon_theme
+gtk-application-prefer-dark-theme=$prefer_dark
+gtk-decoration-layout=icon:minimize,maximize,close
+EOF
+done
+

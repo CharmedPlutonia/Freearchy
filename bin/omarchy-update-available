@@ -1,0 +1,23 @@
+#!/bin/bash
+
+# omarchy:summary=Report whether Freearchy testing has new commits
+
+fork="https://github.com/CharmedPlutonia/Freearchy.git"
+branch="testing"
+
+git -C "$OMARCHY_PATH" remote set-url origin "$fork"
+if ! git -C "$OMARCHY_PATH" fetch --quiet origin "$branch"; then
+  echo "Error: Could not reach the Freearchy testing repo."
+  exit 1
+fi
+
+local_rev=$(git -C "$OMARCHY_PATH" rev-parse HEAD)
+remote_rev=$(git -C "$OMARCHY_PATH" rev-parse "origin/$branch")
+
+if [[ $local_rev != $remote_rev ]]; then
+  echo "Freearchy testing update available"
+  exit 0
+fi
+
+echo "Freearchy testing is up to date"
+exit 1

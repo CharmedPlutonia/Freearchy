@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# omarchy:summary=Freearchy testing only tracks its own branch
+# omarchy:args=<testing>
+
+branch="${1:-testing}"
+
+if [[ $branch != "testing" && $branch != "nightly" && $branch != "freearchy-nightly" ]]; then
+  echo "Error: Refusing to switch to '$branch'. Freearchy testing does not track upstream Omarchy branches."
+  exit 1
+fi
+
+git -C "$OMARCHY_PATH" remote set-url origin https://github.com/CharmedPlutonia/Freearchy.git
+git -C "$OMARCHY_PATH" fetch origin testing
+git -C "$OMARCHY_PATH" switch -C testing origin/testing

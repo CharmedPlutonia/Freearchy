@@ -1,0 +1,27 @@
+#!/bin/bash
+
+# omarchy:summary=Pull the latest Freearchy testing git changes
+
+set -e
+
+echo -e "\e[32mUpdate Freearchy testing\e[0m"
+
+omarchy-update-time
+
+fork="https://github.com/CharmedPlutonia/Freearchy.git"
+branch="testing"
+
+hyprctl keyword debug:suppress_errors true &>/dev/null || true
+
+git -C "$OMARCHY_PATH" remote set-url origin "$fork"
+git -C "$OMARCHY_PATH" fetch origin "$branch"
+
+if [[ $(git -C "$OMARCHY_PATH" rev-parse --abbrev-ref HEAD) != "$branch" ]]; then
+  git -C "$OMARCHY_PATH" checkout -B "$branch" "origin/$branch"
+else
+  git -C "$OMARCHY_PATH" pull --autostash origin "$branch"
+fi
+
+git -C "$OMARCHY_PATH" --no-pager diff --check || git -C "$OMARCHY_PATH" reset --merge
+
+hyprctl reload &>/dev/null || true

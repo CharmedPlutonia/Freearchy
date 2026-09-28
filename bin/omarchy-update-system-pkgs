@@ -1,0 +1,13 @@
+#!/bin/bash
+
+# omarchy:summary=Update system packages with pacman
+# omarchy:requires-sudo=true
+
+set -e
+
+echo -e "\e[32m\nUpdate system packages\e[0m"
+sudo cp -f "$OMARCHY_PATH/default/pacman/pacman-stable.conf" /etc/pacman.conf
+if grep -q 'omarchy.org' /etc/pacman.d/mirrorlist 2>/dev/null; then
+  echo 'Server = https://geo.mirror.pkgbuild.com/$repo/os/$arch' | sudo tee /etc/pacman.d/mirrorlist >/dev/null
+fi
+sudo pacman -Syyu --noconfirm

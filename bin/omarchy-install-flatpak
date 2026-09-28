@@ -1,0 +1,30 @@
+#!/bin/bash
+
+# omarchy:summary=Install an application from Flathub
+# omarchy:requires-sudo=true
+
+set -e
+
+omarchy-pkg-add flatpak
+sudo flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+
+query=$(gum input --placeholder "com.spotify.Client or a search name" --prompt "Flatpak: ")
+if [[ -z $query ]]; then
+  echo "Cancelled"
+  exit 0
+fi
+
+if [[ $query == *.* ]]; then
+  flatpak install -y flathub "$query"
+else
+  app_id=$(flatpak search --columns=application "$query" | awk 'NF && $0 !~ /^Application/ { print; exit }')
+  if [[ -z $app_id ]]; then
+    echo "No Flathub app matched '$query'"
+    exit 1
+  fi
+  echo "Installing $app_id"
+  flatpak install -y flathub "$app_id"
+fi
+
+update-desktop-database ~/.local/share/applications || true
+echo "Installed. Open Walker again to launch it."
