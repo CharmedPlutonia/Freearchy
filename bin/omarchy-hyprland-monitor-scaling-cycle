@@ -32,22 +32,42 @@ fi
 
 NEW_SCALE=${SCALES[$NEW_IDX]}
 
+# GTK only honors whole-number GDK_SCALE. Keep it aligned with the monitor
+# scale so apps do not stay 2x-sized after dropping to 1080p/1x.
+GDK_SCALE=$(awk -v s="$NEW_SCALE" 'BEGIN {
+  if (s < 1.5) print 1
+  else if (s < 2.5) print 2
+  else if (s < 3.5) print 3
+  else print 4
+}')
+
 hyprctl keyword monitor "$ACTIVE_MONITOR,${WIDTH}x${HEIGHT}@${REFRESH_RATE},auto,$NEW_SCALE"
+hyprctl keyword env "GDK_SCALE,$GDK_SCALE" >/dev/null 2>&1 || true
 
 # Persist the scale when the user still has the generic catch-all monitor line.
 MONITOR_LUA="$HOME/.config/hypr/monitors.lua"
-if [[ -f $MONITOR_LUA ]] && grep -q 'mode = "preferred", position = "auto", scale = "auto"' "$MONITOR_LUA"; then
-  sed -i "s/scale = \"auto\"/scale = ${NEW_SCALE}/" "$MONITOR_LUA"
-elif [[ -f $MONITOR_LUA ]] && grep -q 'mode = "preferred", position = "auto", scale = ' "$MONITOR_LUA"; then
-  sed -i -E "s/(mode = \"preferred\", position = \"auto\", scale = )[^}]*/\\1${NEW_SCALE}/" "$MONITOR_LUA"
+if [[ -f $MONITOR_LUA ]]; then
+  if grep -qE '^[[:space:]]*hl\.env\("GDK_SCALE",' "$MONITOR_LUA"; then
+    sed -i -E "s/^([[:space:]]*)hl\.env\(\"GDK_SCALE\", \"[^\"]*\"\)/\1hl.env(\"GDK_SCALE\", \"${GDK_SCALE}\")/" "$MONITOR_LUA"
+  fi
+
+  if grep -q 'mode = "preferred", position = "auto", scale = "auto"' "$MONITOR_LUA"; then
+    sed -i "s/scale = \"auto\"/scale = ${NEW_SCALE}/" "$MONITOR_LUA"
+  elif grep -q 'mode = "preferred", position = "auto", scale = ' "$MONITOR_LUA"; then
+    sed -i -E "s/(mode = \"preferred\", position = \"auto\", scale = )[^}]*/\\1${NEW_SCALE}/" "$MONITOR_LUA"
+  fi
 fi
 
 MONITOR_CONF="$HOME/.config/hypr/monitors.conf"
 if [[ -f $MONITOR_CONF ]]; then
+  if grep -qE '^[[:space:]]*env = GDK_SCALE,' "$MONITOR_CONF"; then
+    sed -i -E "s|^([[:space:]]*env = GDK_SCALE,).*|\\1${GDK_SCALE}|" "$MONITOR_CONF"
+  fi
+
   mapfile -t ACTIVE_LINES < <(grep -E '^[[:space:]]*monitor=' "$MONITOR_CONF" | grep -vE 'disable[[:space:]]*$')
   if [[ ${#ACTIVE_LINES[@]} -eq 1 ]] && [[ "${ACTIVE_LINES[0]}" =~ ^monitor=,preferred,auto, ]]; then
     sed -i -E "s|^(monitor=,preferred,auto,).*|\\1${NEW_SCALE}|" "$MONITOR_CONF"
   fi
 fi
 
-notify-send -u low "󰍹    Display scaling set to ${NEW_SCALE}x"
+notify-send -u low "󰅹    Display scaling set to ${NEW_SCALE}x"
