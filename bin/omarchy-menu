@@ -775,7 +775,7 @@ show_update_menu() {
 }
 
 show_update_channel_menu() {
-  case $(menu "Update channel" "🌙  Freearchy testing") in
+  case $(menu "Update channel" "🌙  Freearchy 1 beta") in
   *Freearchy*) present_terminal "omarchy-channel-set testing" ;;
   *) show_update_menu ;;
   esac

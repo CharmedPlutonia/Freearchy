@@ -66,7 +66,7 @@
       "type": "command",
       "key": "\ue900 OS",
       "keyColor": "blue",
-      "text": "echo \"Freearchy testing\""
+      "text": "echo \"Freearchy 1 beta\""
     },
     {
       "type": "command",

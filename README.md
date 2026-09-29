@@ -1,6 +1,6 @@
-# Freearchy testing
+# Freearchy 1 beta
 
-Freearchy testing is a 3.8.4-based fork of Omarchy, brought back toward stock Arch.
+Freearchy 1 beta is a 3.8.4-based fork of Omarchy, brought back toward stock Arch.
 
 - Official Arch repositories only. No Omarchy package repository and no Omarchy mirrors.
 - Stock `linux` kernel. No `linux-ptl`, `linux-t2`, or Omarchy kernel.
