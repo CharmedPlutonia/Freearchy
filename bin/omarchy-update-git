@@ -1,15 +1,15 @@
 #!/bin/bash
 
-# omarchy:summary=Pull the latest Freearchy testing git changes
+# omarchy:summary=Pull the latest Freearchy 1 beta git changes
 
 set -e
 
-echo -e "\e[32mUpdate Freearchy testing\e[0m"
+echo -e "\033[38;2;32;223;241mUpdate Freearchy 1 beta\033[0m"
 
 omarchy-update-time
 
 fork="https://github.com/CharmedPlutonia/Freearchy.git"
-branch="testing"
+branch="main"
 
 hyprctl keyword debug:suppress_errors true &>/dev/null || true
 
