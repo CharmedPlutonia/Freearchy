@@ -1,17 +1,20 @@
 #!/bin/bash
 
-# omarchy:summary=Update Freearchy 1 beta from main
-# omarchy:args=<main>
+# omarchy:summary=Update Freearchy from main or testing
+# omarchy:args=<main|testing>
 
 set -e
 
-branch="${1:-main}"
+case "${1:-}" in
+  "" ) branch="$(omarchy-version-channel)" ;;
+  testing | nightly | freearchy-nightly) branch="testing" ;;
+  main | master | beta) branch="main" ;;
+  *)
+    echo "Error: Refusing to update from '$1'."
+    echo "Choose main or testing. Omarchy channels are not used."
+    exit 1
+    ;;
+esac
 
-if [[ $branch != "main" && $branch != "master" && $branch != "testing" && $branch != "beta" ]]; then
-  echo "Error: Refusing to update from '$branch'."
-  echo "Freearchy 1 beta tracks main, not upstream Omarchy."
-  exit 1
-fi
-
-omarchy-snapshot create || (( $? == 127 ))
-omarchy-channel-set main
+omarchy-snapshot create || (($? == 127))
+omarchy-channel-set "$branch"

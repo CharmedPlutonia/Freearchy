@@ -1,6 +1,11 @@
-echo "Track Freearchy 1 beta from main instead of testing"
+echo "Remember whether Freearchy updates come from main or testing"
 
-git -C "$OMARCHY_PATH" remote set-url origin https://github.com/CharmedPlutonia/Freearchy.git
-if git -C "$OMARCHY_PATH" fetch origin main && git -C "$OMARCHY_PATH" rev-parse --verify origin/main >/dev/null; then
-  git -C "$OMARCHY_PATH" checkout -B main origin/main
+mkdir -p "${HOME}/.config/omarchy"
+if [[ ! -f ${HOME}/.config/omarchy/channel ]]; then
+  branch="$(git -C "$OMARCHY_PATH" rev-parse --abbrev-ref HEAD 2>/dev/null || echo main)"
+  case "$branch" in
+    testing | nightly | freearchy-nightly) branch="testing" ;;
+    *) branch="main" ;;
+  esac
+  printf '%s\n' "$branch" >"${HOME}/.config/omarchy/channel"
 fi

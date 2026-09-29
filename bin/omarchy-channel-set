@@ -1,17 +1,28 @@
 #!/bin/bash
 
-# omarchy:summary=Stay on Freearchy 1 beta. Upstream Omarchy channels are disabled.
-# omarchy:args=<main>
+# omarchy:summary=Choose whether Freearchy updates come from main or testing
+# omarchy:args=<main|testing>
 # omarchy:requires-sudo=true
 
-if [[ ${1:-main} != "main" && ${1:-} != "master" && ${1:-} != "testing" && ${1:-} != "beta" ]]; then
-  echo "Freearchy 1 beta does not follow Omarchy stable, rc, edge, or dev."
-  echo "Those channels would pull Omarchy 4.x. Staying on main."
-fi
+case "${1:-main}" in
+  testing | nightly | freearchy-nightly) branch="testing" ;;
+  main | master | beta) branch="main" ;;
+  *)
+    echo "Freearchy only updates from main or testing."
+    echo "Omarchy stable, rc, edge, and dev are not used."
+    exit 1
+    ;;
+esac
 
 git -C "$OMARCHY_PATH" remote set-url origin https://github.com/CharmedPlutonia/Freearchy.git
-git -C "$OMARCHY_PATH" fetch origin main
-git -C "$OMARCHY_PATH" checkout -B main origin/main
+git -C "$OMARCHY_PATH" fetch origin "$branch"
+git -C "$OMARCHY_PATH" checkout -B "$branch" "origin/$branch"
 
-omarchy-refresh-pacman
-omarchy-update -y
+mkdir -p "${HOME}/.config/omarchy"
+printf '%s\n' "$branch" >"${HOME}/.config/omarchy/channel"
+echo "Update channel: $branch"
+
+if [[ -z ${OMARCHY_UPDATE_LOGGED:-} ]]; then
+  omarchy-refresh-pacman
+  omarchy-update -y
+fi

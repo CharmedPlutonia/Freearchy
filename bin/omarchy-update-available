@@ -3,7 +3,8 @@
 # omarchy:summary=Report whether Freearchy 1 beta has new commits
 
 fork="https://github.com/CharmedPlutonia/Freearchy.git"
-branch="main"
+branch="$(omarchy-version-channel)"
+[[ $branch == "testing" ]] || branch="main"
 
 git -C "$OMARCHY_PATH" remote set-url origin "$fork"
 if ! git -C "$OMARCHY_PATH" fetch --quiet origin "$branch"; then
@@ -15,9 +16,9 @@ local_rev=$(git -C "$OMARCHY_PATH" rev-parse HEAD)
 remote_rev=$(git -C "$OMARCHY_PATH" rev-parse "origin/$branch")
 
 if [[ $local_rev != $remote_rev ]]; then
-  echo "Freearchy 1 beta update available"
+  echo "Freearchy $branch update available"
   exit 0
 fi
 
-echo "Freearchy 1 beta is up to date"
+echo "Freearchy $branch is up to date"
 exit 1
