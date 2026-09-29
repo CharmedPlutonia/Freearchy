@@ -4,12 +4,13 @@
 
 set -e
 
-echo -e "\033[38;2;32;223;241mUpdate Freearchy 1 beta\033[0m"
+fork="https://github.com/CharmedPlutonia/Freearchy.git"
+branch="$(omarchy-version-channel)"
+[[ $branch == "testing" ]] || branch="main"
+
+echo -e "\033[38;2;32;223;241mUpdate Freearchy from $branch\033[0m"
 
 omarchy-update-time
-
-fork="https://github.com/CharmedPlutonia/Freearchy.git"
-branch="main"
 
 hyprctl keyword debug:suppress_errors true &>/dev/null || true
 

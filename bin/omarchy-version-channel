@@ -1,9 +1,20 @@
 #!/bin/bash
 
-# omarchy:summary=Print the active Freearchy channel
+# omarchy:summary=Print the active Freearchy update channel
 
 if grep -q 'omarchy.org' /etc/pacman.conf /etc/pacman.d/mirrorlist 2>/dev/null; then
   echo "omarchy-mirror-still-configured"
-else
-  echo "beta"
+  exit 0
 fi
+
+channel_file="${HOME}/.config/omarchy/channel"
+if [[ -f $channel_file ]]; then
+  channel="$(<"$channel_file")"
+else
+  channel="$(git -C "${OMARCHY_PATH:-$HOME/.local/share/omarchy}" rev-parse --abbrev-ref HEAD 2>/dev/null || echo main)"
+fi
+
+case "$channel" in
+  testing | nightly | freearchy-nightly) echo testing ;;
+  *) echo main ;;
+esac

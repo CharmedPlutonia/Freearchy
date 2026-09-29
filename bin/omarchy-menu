@@ -775,8 +775,19 @@ show_update_menu() {
 }
 
 show_update_channel_menu() {
-  case $(menu "Update channel" "🌙  Freearchy 1 beta") in
-  *Freearchy*) present_terminal "omarchy-channel-set main" ;;
+  local current main_label testing_label
+  current="$(omarchy-version-channel)"
+  main_label="󰘬  Main"
+  testing_label="󰔫  Testing"
+  if [[ $current == "testing" ]]; then
+    testing_label="󰔫  Testing (current)"
+  else
+    main_label="󰘬  Main (current)"
+  fi
+
+  case $(menu "Update channel" "$main_label\n$testing_label") in
+  *Main*) present_terminal "omarchy-channel-set main" ;;
+  *Testing*) present_terminal "omarchy-channel-set testing" ;;
   *) show_update_menu ;;
   esac
 }

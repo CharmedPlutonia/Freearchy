@@ -9,7 +9,7 @@ Freearchy 1 is a 3.8.4-based fork of Omarchy, brought back toward stock Arch.
 - Default editor is nano, including text-file associations.
 - Default theme is Catppuccin Mocha, with the night-bike wallpaper first.
 - Flatpak is installed and Flathub is enabled.
-- Updates track `main` on this repo, not upstream Omarchy 4.x.
+- Updates are pushed to `testing` first, then to `main`. A new install follows `main`. Switch any time from the menu under Update, then Channel.
 
 Install:
 
