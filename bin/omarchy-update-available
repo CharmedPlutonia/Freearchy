@@ -1,13 +1,13 @@
 #!/bin/bash
 
-# omarchy:summary=Report whether Freearchy testing has new commits
+# omarchy:summary=Report whether Freearchy 1 beta has new commits
 
 fork="https://github.com/CharmedPlutonia/Freearchy.git"
-branch="testing"
+branch="main"
 
 git -C "$OMARCHY_PATH" remote set-url origin "$fork"
 if ! git -C "$OMARCHY_PATH" fetch --quiet origin "$branch"; then
-  echo "Error: Could not reach the Freearchy testing repo."
+  echo "Error: Could not reach the Freearchy repo."
   exit 1
 fi
 

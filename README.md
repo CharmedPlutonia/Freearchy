@@ -9,12 +9,12 @@ Freearchy 1 beta is a 3.8.4-based fork of Omarchy, brought back toward stock Arc
 - Default editor is nano, including text-file associations.
 - Default theme is Catppuccin Mocha, with the night-bike wallpaper first.
 - Flatpak is installed and Flathub is enabled.
-- Updates track `testing` on this repo, not upstream Omarchy 4.x.
+- Updates track `main` on this repo, not upstream Omarchy 4.x.
 
-Install from the branch:
+Install:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/CharmedPlutonia/Freearchy/testing/boot.sh | bash
+curl -fsSL https://raw.githubusercontent.com/CharmedPlutonia/Freearchy/main/boot.sh | bash
 ```
 
 ## License

@@ -1,16 +1,17 @@
 #!/bin/bash
 
-# omarchy:summary=Update Freearchy testing. Other branches are refused.
-# omarchy:args=<testing>
+# omarchy:summary=Update Freearchy 1 beta from main
+# omarchy:args=<main>
 
 set -e
 
-branch="${1:-testing}"
+branch="${1:-main}"
 
-if [[ $branch != "testing" && $branch != "nightly" && $branch != "freearchy-nightly" ]]; then
+if [[ $branch != "main" && $branch != "master" && $branch != "testing" && $branch != "beta" ]]; then
   echo "Error: Refusing to update from '$branch'."
+  echo "Freearchy 1 beta tracks main, not upstream Omarchy."
   exit 1
 fi
 
 omarchy-snapshot create || (( $? == 127 ))
-omarchy-channel-set testing
+omarchy-channel-set main

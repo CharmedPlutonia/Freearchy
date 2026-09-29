@@ -2,17 +2,40 @@
 
 # omarchy:summary=Prompt for confirmation before starting an update
 
+accent="#20dff1"
+colors="$HOME/.config/omarchy/current/theme/colors.toml"
+if [[ -f $colors ]]; then
+  theme_accent="$(awk -F'"' '/^accent[[:space:]]*=/{print $2; exit}' "$colors")"
+  [[ $theme_accent =~ ^#[0-9A-Fa-f]{6}$ ]] && accent="$theme_accent"
+fi
+
+# Black text on a light accent, white text on a dark one.
+r=$((16#${accent:1:2}))
+g=$((16#${accent:3:2}))
+b=$((16#${accent:5:2}))
+if (( (r * 299 + g * 587 + b * 114) / 1000 > 150 )); then
+  selected_fg="#11111b"
+else
+  selected_fg="#f5f5f5"
+fi
+
+export GUM_CONFIRM_PROMPT_FOREGROUND="$accent"
+export GUM_CONFIRM_SELECTED_FOREGROUND="$selected_fg"
+export GUM_CONFIRM_SELECTED_BACKGROUND="$accent"
+export GUM_CONFIRM_UNSELECTED_FOREGROUND="7"
+export GUM_CONFIRM_UNSELECTED_BACKGROUND="0"
+
 gum style --border normal --padding "1 2" \
   "Ready to update?" \
   "" \
   "• You cannot stop the update once you start!" \
   "• Make sure you're connected to power or have a full battery" \
   "" \
-  "What's new: https://github.com/CharmedPlutonia/Freearchy/commits/testing"
+  "What's new: https://github.com/CharmedPlutonia/Freearchy/commits/main"
 
 echo
 
-if ! gum confirm "Continue with update?"; then
+if ! gum confirm --padding "0 2" --show-help=false "Continue with update?"; then
   echo "Update cancelled"
   exit 1
 fi

@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# omarchy:summary=Reinstall the Freearchy testing source directory from git
+# omarchy:summary=Reinstall the Freearchy 1 beta source directory from git
 
 set -e
 
-git clone --depth=1 --branch testing "https://github.com/CharmedPlutonia/Freearchy.git" ~/.local/share/omarchy-new >/dev/null
+git clone --depth=1 --branch main "https://github.com/CharmedPlutonia/Freearchy.git" ~/.local/share/omarchy-new >/dev/null
 mv $OMARCHY_PATH ~/.local/share/omarchy-old
 mv ~/.local/share/omarchy-new $OMARCHY_PATH

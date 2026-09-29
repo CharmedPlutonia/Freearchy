@@ -28,12 +28,13 @@ export LOGO_HEIGHT=$(wc -l <"$LOGO_PATH" 2>/dev/null || echo 0)
 export PADDING_LEFT=$(((TERM_WIDTH - LOGO_WIDTH) / 2))
 export PADDING_LEFT_SPACES=$(printf "%*s" $PADDING_LEFT "")
 
-# Tokyo Night theme for gum confirm
-export GUM_CONFIRM_PROMPT_FOREGROUND="6"     # Cyan for prompt
-export GUM_CONFIRM_SELECTED_FOREGROUND="#11111b"   # Dark text on selected
-export GUM_CONFIRM_SELECTED_BACKGROUND="#20dff1" # Installer brand color
-export GUM_CONFIRM_UNSELECTED_FOREGROUND="7" # White for unselected
-export GUM_CONFIRM_UNSELECTED_BACKGROUND="0" # Black background for unselected
+# High-contrast confirm. ANSI colors still show on the install console,
+# where hex colors are often ignored and Yes/No look the same.
+export GUM_CONFIRM_PROMPT_FOREGROUND="14"
+export GUM_CONFIRM_SELECTED_FOREGROUND="0"
+export GUM_CONFIRM_SELECTED_BACKGROUND="14"
+export GUM_CONFIRM_UNSELECTED_FOREGROUND="7"
+export GUM_CONFIRM_UNSELECTED_BACKGROUND="0"
 export PADDING="0 0 0 $PADDING_LEFT"         # Gum Style
 export GUM_CHOOSE_PADDING="$PADDING"
 export GUM_FILTER_PADDING="$PADDING"
