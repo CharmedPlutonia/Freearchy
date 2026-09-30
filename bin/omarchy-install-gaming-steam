@@ -12,9 +12,4 @@ omarchy-install-gaming-gpu-lib32
 echo ""
 echo "Steam will start automatically now. This might take a while..."
 
-if [[ -f $OMARCHY_PATH/applications/steam.desktop ]]; then
-  cp "$OMARCHY_PATH/applications/steam.desktop" "$HOME/.local/share/applications/steam.desktop"
-  update-desktop-database "$HOME/.local/share/applications" >/dev/null 2>&1 || true
-fi
-
-setsid uwsm-app -- omarchy-launch-steam >/dev/null 2>&1 &
+setsid gtk-launch steam >/dev/null 2>&1 &

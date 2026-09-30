@@ -2,4 +2,12 @@
 
 # omarchy:summary=Launch the fastfetch TUI that gives information about the current system.
 
+mkdir -p "${HOME}/.config/omarchy/branding"
+about="${HOME}/.config/omarchy/branding/about.txt"
+if [[ ! -s $about && -f $OMARCHY_PATH/icon.txt ]]; then
+  cp "$OMARCHY_PATH/icon.txt" "$about"
+fi
+
+omarchy-branding-color >/dev/null 2>&1 || true
+
 exec omarchy-launch-or-focus-tui "bash -c 'fastfetch; read -n 1 -s'"
