@@ -1,0 +1,5 @@
+# Freearchy zsh + Oh My Zsh entrypoint.
+# (don't mess with the sourced defaults directly, just overwrite them here!)
+source ~/.local/share/omarchy/default/zsh/rc
+
+# Add your own exports, aliases, and functions here.
