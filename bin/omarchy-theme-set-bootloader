@@ -1,0 +1,62 @@
+#!/bin/bash
+
+# omarchy:summary=Apply the current theme colors to Limine or GRUB
+# omarchy:hidden=true
+
+THEME_DIR="$HOME/.config/omarchy/current/theme"
+LIMINE_THEME="$THEME_DIR/limine-theme.conf"
+GRUB_THEME="$THEME_DIR/grub.theme.txt"
+LIMINE_CONF="/boot/limine.conf"
+GRUB_THEME_DIR="/boot/grub/themes/freearchy"
+
+apply_limine() {
+  [[ -f $LIMINE_THEME && -f $LIMINE_CONF ]] || return 0
+
+  if ! sudo -n true >/dev/null 2>&1 && [[ ! -w $LIMINE_CONF ]]; then
+    return 0
+  fi
+
+  local tmp
+  tmp=$(mktemp)
+
+  sudo cp "$LIMINE_CONF" "$LIMINE_CONF.bak.omarchy" 2>/dev/null || true
+  sudo cp "$LIMINE_CONF" "$tmp"
+
+  while IFS= read -r line; do
+    [[ $line == \#* || -z $line ]] && continue
+    local key="${line%%:*}"
+    key="${key%% *}"
+    [[ -n $key ]] || continue
+    if grep -q "^${key}:" "$tmp"; then
+      sed -i "s|^${key}:.*|${line}|" "$tmp"
+    else
+      printf '%s\n' "$line" >>"$tmp"
+    fi
+  done <"$LIMINE_THEME"
+
+  sudo cp "$tmp" "$LIMINE_CONF"
+  rm -f "$tmp"
+}
+
+apply_grub() {
+  [[ -f $GRUB_THEME ]] || return 0
+  [[ -d /boot/grub || -d /boot/grub2 ]] || return 0
+
+  if ! sudo -n true >/dev/null 2>&1; then
+    return 0
+  fi
+
+  sudo mkdir -p "$GRUB_THEME_DIR"
+  sudo cp "$GRUB_THEME" "$GRUB_THEME_DIR/theme.txt"
+
+  if [[ -f /etc/default/grub ]]; then
+    if grep -q '^GRUB_THEME=' /etc/default/grub; then
+      sudo sed -i 's|^GRUB_THEME=.*|GRUB_THEME="/boot/grub/themes/freearchy/theme.txt"|' /etc/default/grub
+    else
+      echo 'GRUB_THEME="/boot/grub/themes/freearchy/theme.txt"' | sudo tee -a /etc/default/grub >/dev/null
+    fi
+  fi
+}
+
+apply_limine
+apply_grub

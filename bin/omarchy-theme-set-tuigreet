@@ -1,0 +1,29 @@
+#!/bin/bash
+
+# omarchy:summary=Apply the current theme colors to greetd tuigreet
+# omarchy:hidden=true
+
+THEME_FILE="$HOME/.config/omarchy/current/theme/tuigreet.theme"
+GREETD_CONF="/etc/greetd/config.toml"
+DEFAULT_CONF="$OMARCHY_PATH/default/greetd/config.toml"
+
+[[ -f $THEME_FILE ]] || exit 0
+[[ -f $GREETD_CONF || -d /etc/greetd ]] || exit 0
+
+if ! sudo -n true >/dev/null 2>&1; then
+  exit 0
+fi
+
+theme=$(<"$THEME_FILE")
+theme="${theme//$'\n'/}"
+
+if [[ ! -f $GREETD_CONF ]]; then
+  sudo mkdir -p /etc/greetd
+  sudo cp "$DEFAULT_CONF" "$GREETD_CONF"
+fi
+
+if grep -q -- '--theme' "$GREETD_CONF"; then
+  sudo sed -i -E "s|--theme[[:space:]]+'[^']*'|--theme '${theme}'|g; s|--theme[[:space:]]+\"[^\"]*\"|--theme '${theme}'|g" "$GREETD_CONF"
+else
+  sudo sed -i -E "s|(command = \"tuigreet)|\1 --theme '${theme}'|" "$GREETD_CONF"
+fi

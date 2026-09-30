@@ -1,0 +1,74 @@
+#!/bin/bash
+
+# omarchy:summary=Install Fish or zsh with Oh My Zsh and apply the current Freearchy theme
+# omarchy:args=<fish|zsh>
+# omarchy:examples=omarchy install shell fish | omarchy install shell zsh
+# omarchy:requires-sudo=true
+
+set_login_shell() {
+  local shell_path="$1"
+
+  if ! grep -qxF "$shell_path" /etc/shells; then
+    echo "$shell_path" | sudo tee -a /etc/shells >/dev/null
+  fi
+
+  if [[ $(getent passwd "$USER" | cut -d: -f7) != "$shell_path" ]]; then
+    echo "Setting login shell to $shell_path"
+    if command -v chsh >/dev/null; then
+      chsh -s "$shell_path" || sudo chsh -s "$shell_path" "$USER"
+    else
+      sudo usermod -s "$shell_path" "$USER"
+    fi
+  fi
+}
+
+install_fish() {
+  echo "Installing Fish..."
+  omarchy-pkg-add fish || return 1
+
+  mkdir -p ~/.config/fish
+  if [[ ! -f ~/.config/fish/config.fish ]]; then
+    cp "$OMARCHY_PATH/default/fish/config.fish" ~/.config/fish/config.fish
+  elif ! grep -q "omarchy/default/fish/rc.fish" ~/.config/fish/config.fish; then
+    printf '\n# Freearchy fish defaults\nsource %s/default/fish/rc.fish\n' "$OMARCHY_PATH" >>~/.config/fish/config.fish
+  fi
+
+  omarchy-theme-set-shell
+  set_login_shell "$(command -v fish)"
+  echo ""
+  echo "Fish installed. Open a new terminal to use it. Bash configs are unchanged."
+}
+
+install_zsh() {
+  echo "Installing zsh and Oh My Zsh..."
+  omarchy-pkg-add zsh || return 1
+
+  if [[ ! -d $HOME/.oh-my-zsh ]]; then
+    git clone --depth=1 https://github.com/ohmyzsh/ohmyzsh.git "$HOME/.oh-my-zsh" || return 1
+  fi
+
+  mkdir -p "$HOME/.oh-my-zsh/custom/themes"
+  if [[ ! -f $HOME/.zshrc ]]; then
+    cp "$OMARCHY_PATH/default/zsh/zshrc" "$HOME/.zshrc"
+  elif ! grep -q "ZSH_THEME=" "$HOME/.zshrc"; then
+    cat "$OMARCHY_PATH/default/zsh/zshrc" >>"$HOME/.zshrc"
+  fi
+
+  omarchy-theme-set-shell
+  set_login_shell "$(command -v zsh)"
+  echo ""
+  echo "zsh with Oh My Zsh installed. Open a new terminal to use it. Bash configs are unchanged."
+}
+
+case $1 in
+fish)
+  install_fish
+  ;;
+zsh | ohmyzsh | oh-my-zsh)
+  install_zsh
+  ;;
+*)
+  echo "Usage: omarchy-install-shell <fish|zsh>"
+  exit 1
+  ;;
+esac
