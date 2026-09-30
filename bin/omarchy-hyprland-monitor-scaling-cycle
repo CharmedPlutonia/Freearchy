@@ -70,4 +70,6 @@ if [[ -f $MONITOR_CONF ]]; then
   fi
 fi
 
+omarchy-restart-waybar >/dev/null 2>&1 || true
+
 notify-send -u low "󰅹    Display scaling set to ${NEW_SCALE}x"
