@@ -7,6 +7,9 @@
 
 set -e
 
+# Contents-API commits can drop the execute bit. Fix that before we invoke helpers.
+chmod +x "${OMARCHY_PATH:-$HOME/.local/share/omarchy}/bin/"* >/dev/null 2>&1 || true
+
 # Run the update inside a PTY so pacman/yay keep showing download progress
 # while still logging the full session for later analysis.
 if [[ -z $OMARCHY_UPDATE_LOGGED ]]; then
@@ -16,8 +19,8 @@ fi
 
 trap 'echo ""; echo -e "\033[0;31mSomething went wrong during the update!\n\nPlease review the output above carefully, correct the error, and retry the update.\033[0m"' ERR
 
-if [[ $1 == "-y" ]] || omarchy-update-confirm; then
+if [[ $1 == "-y" ]] || bash "${OMARCHY_PATH:-$HOME/.local/share/omarchy}/bin/omarchy-update-confirm"; then
   omarchy-snapshot create || (($? == 127))
-  omarchy-update-git
-  omarchy-update-perform
+  bash "${OMARCHY_PATH:-$HOME/.local/share/omarchy}/bin/omarchy-update-git"
+  bash "${OMARCHY_PATH:-$HOME/.local/share/omarchy}/bin/omarchy-update-perform"
 fi
