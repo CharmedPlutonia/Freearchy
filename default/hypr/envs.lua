@@ -11,6 +11,11 @@ if gum_file then
   gum_file:close()
 end
 
+hl.env("GDK_SCALE", "1")
+hl.env("GDK_DPI_SCALE", "1")
+hl.env("QT_SCALE_FACTOR", "1")
+hl.env("QT_AUTO_SCREEN_SCALE_FACTOR", "0")
+hl.env("STEAM_FORCE_DESKTOPUI_SCALING", "1")
 hl.env("XCURSOR_SIZE", "24")
 hl.env("HYPRCURSOR_SIZE", "24")
 hl.env("GDK_BACKEND", "wayland,x11,*")
