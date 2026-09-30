@@ -1,0 +1,31 @@
+# Sourced from omarchy-menu via ~/.config/omarchy/extensions/menu.sh
+# Redefines the Install menu so Shell sits next to Terminal.
+
+show_install_menu() {
+  case $(menu "Install" "📇  Package\n📇  AUR\n📖  Flatpak\n🌐  Web App\n🐧  TUI\n📦  Service\n  Style\n🗮  Development\n👜  Editor\n🐧  Terminal\n팜83  Shell\n🌐  Browser\n팜64  AI\n🎮  Gaming\n📲  Windows") in
+  *Package*) terminal omarchy-pkg-install ;;
+  *AUR*) terminal omarchy-pkg-aur-install ;;
+  *Flatpak*) terminal omarchy-install-flatpak ;;
+  *Web*) present_terminal omarchy-webapp-install ;;
+  *TUI*) present_terminal omarchy-tui-install ;;
+  *Service*) show_install_service_menu ;;
+  *Style*) show_install_style_menu ;;
+  *Development*) show_install_development_menu ;;
+  *Editor*) show_install_editor_menu ;;
+  *Terminal*) show_install_terminal_menu ;;
+  *Shell*) show_install_shell_menu ;;
+  *Browser*) show_install_browser_menu ;;
+  *Gaming*) show_install_gaming_menu ;;
+  *AI*) show_install_ai_menu ;;
+  *Windows*) present_terminal "omarchy-windows-vm install" ;;
+  *) show_main_menu ;;
+  esac
+}
+
+show_install_shell_menu() {
+  case $(menu "Install" "팜3a  Fish\n팜83  zsh (Oh My Zsh)") in
+  *Fish*) present_terminal "omarchy-install-shell fish" ;;
+  *zsh*) present_terminal "omarchy-install-shell zsh" ;;
+  *) show_install_menu ;;
+  esac
+}
