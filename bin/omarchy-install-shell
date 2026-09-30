@@ -48,10 +48,14 @@ install_zsh() {
   fi
 
   mkdir -p "$HOME/.oh-my-zsh/custom/themes"
+
+  local zshrc_src="$OMARCHY_PATH/default/zshrc"
+  [[ -f $zshrc_src ]] || zshrc_src="$OMARCHY_PATH/default/zsh/zshrc"
+
   if [[ ! -f $HOME/.zshrc ]]; then
-    cp "$OMARCHY_PATH/default/zsh/zshrc" "$HOME/.zshrc"
-  elif ! grep -q "ZSH_THEME=" "$HOME/.zshrc"; then
-    cat "$OMARCHY_PATH/default/zsh/zshrc" >>"$HOME/.zshrc"
+    cp "$zshrc_src" "$HOME/.zshrc"
+  elif ! grep -q "omarchy/default/zsh" "$HOME/.zshrc"; then
+    printf '\n# Freearchy zsh defaults\nsource %s/default/zsh/rc\n' "$OMARCHY_PATH" >>"$HOME/.zshrc"
   fi
 
   omarchy-theme-set-shell
