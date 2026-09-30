@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# omarchy:summary=Apply the current theme color to Chromium, Chrome, Edge, and Brave
+# omarchy:summary=Apply the current theme color to Chromium, Chrome, Edge, Brave, and Firefox
 # omarchy:hidden=true
 
 CHROMIUM_THEME=~/.config/omarchy/current/theme/chromium.theme
@@ -30,6 +30,20 @@ refresh_running_browser() {
   fi
 }
 
+apply_firefox_chrome() {
+  local chrome="$HOME/.config/omarchy/current/theme/firefox.userChrome.css"
+  [[ -f $chrome ]] || return 0
+
+  local profile_dir
+  for profile_dir in "$HOME/.mozilla/firefox" "$HOME/.zen" "$HOME/.librewolf"; do
+    [[ -d $profile_dir ]] || continue
+    find "$profile_dir" -maxdepth 2 -type d \( -name '*.default*' -o -name '*.profile' \) 2>/dev/null | while read -r profile; do
+      mkdir -p "$profile/chrome"
+      ln -sfn "$chrome" "$profile/chrome/userChrome.css"
+    done
+  done
+}
+
 set_browser_policy /etc/chromium/policies/managed
 refresh_running_browser chromium chromium
 
@@ -42,3 +56,5 @@ refresh_running_browser msedge microsoft-edge-stable
 set_browser_policy /etc/brave/policies/managed
 refresh_running_browser brave brave
 refresh_running_browser brave-origin-beta brave-origin-beta -f
+
+apply_firefox_chrome

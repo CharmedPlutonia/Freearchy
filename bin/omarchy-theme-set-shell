@@ -1,0 +1,22 @@
+#!/bin/bash
+
+# omarchy:summary=Apply the current theme colors to Fish and Oh My Zsh
+# omarchy:hidden=true
+
+THEME_DIR="$HOME/.config/omarchy/current/theme"
+FISH_THEME="$THEME_DIR/fish.theme"
+ZSH_THEME="$THEME_DIR/oh-my-zsh.zsh-theme"
+
+if [[ -f $FISH_THEME ]]; then
+  mkdir -p "$HOME/.config/fish/themes"
+  ln -sfn "$FISH_THEME" "$HOME/.config/fish/themes/Freearchy.theme"
+
+  if omarchy-cmd-present fish; then
+    fish -c 'fish_config theme choose Freearchy; fish_config theme save' >/dev/null 2>&1 || true
+  fi
+fi
+
+if [[ -f $ZSH_THEME ]]; then
+  mkdir -p "$HOME/.oh-my-zsh/custom/themes"
+  ln -sfn "$ZSH_THEME" "$HOME/.oh-my-zsh/custom/themes/freearchy.zsh-theme"
+fi

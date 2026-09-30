@@ -20,6 +20,10 @@
       "widget.wayland.fractional-scale.enabled": {
         "Value": true,
         "Status": "default"
+      },
+      "toolkit.legacyUserProfileCustomizations.stylesheets": {
+        "Value": true,
+        "Status": "default"
       }
     }
   }

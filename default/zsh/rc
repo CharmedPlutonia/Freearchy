@@ -1,0 +1,3 @@
+source ~/.local/share/omarchy/default/zsh/envs
+source ~/.local/share/omarchy/default/zsh/init
+source ~/.local/share/omarchy/default/zsh/aliases
