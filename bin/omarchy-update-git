@@ -4,6 +4,8 @@
 
 set -e
 
+chmod +x "$OMARCHY_PATH/bin/"* >/dev/null 2>&1 || chmod +x "${HOME}/.local/share/omarchy/bin/"* >/dev/null 2>&1 || true
+
 fork="https://github.com/CharmedPlutonia/Freearchy.git"
 branch="$(omarchy-version-channel)"
 [[ $branch == "testing" ]] || branch="main"
@@ -22,6 +24,8 @@ if [[ $(git -C "$OMARCHY_PATH" rev-parse --abbrev-ref HEAD) != "$branch" ]]; the
 else
   git -C "$OMARCHY_PATH" pull --autostash origin "$branch"
 fi
+
+chmod +x "$OMARCHY_PATH/bin/"* >/dev/null 2>&1 || true
 
 git -C "$OMARCHY_PATH" --no-pager diff --check || git -C "$OMARCHY_PATH" reset --merge
 
