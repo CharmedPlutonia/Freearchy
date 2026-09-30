@@ -25,6 +25,8 @@ export GUM_CONFIRM_SELECTED_BACKGROUND="$accent"
 export GUM_CONFIRM_UNSELECTED_FOREGROUND="7"
 export GUM_CONFIRM_UNSELECTED_BACKGROUND="0"
 
+omarchy-show-logo
+
 gum style --border normal --padding "1 2" \
   "Ready to update?" \
   "" \
