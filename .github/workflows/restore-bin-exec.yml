@@ -1,0 +1,29 @@
+name: Restore bin execute bits
+
+on:
+  push:
+    branches: [main, testing]
+
+permissions:
+  contents: write
+
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Mark bin scripts executable
+        run: |
+          set -e
+          chmod +x bin/*
+          git add --chmod=+x bin
+          if git diff --cached --quiet; then
+            echo "All bin scripts already executable"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Restore execute bit on bin scripts"
+          git push
