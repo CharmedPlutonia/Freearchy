@@ -2,7 +2,7 @@
 # Redefines the Install menu so Shell sits next to Terminal.
 
 show_install_menu() {
-  case $(menu "Install" "📇  Package\n📇  AUR\n📖  Flatpak\n🌐  Web App\n🐧  TUI\n📦  Service\n  Style\n🗮  Development\n👜  Editor\n🐧  Terminal\n팜83  Shell\n🌐  Browser\n팜64  AI\n🎮  Gaming\n📲  Windows") in
+  case $(menu "Install" "󰣇  Package\n󰣇  AUR\n󰏖  Flatpak\n  Web App\n  TUI\n  Service\n  Style\n󰵮  Development\n  Editor\n  Terminal\n󱆃  Shell\n  Browser\n󱚤  AI\n  Gaming\n󰍲  Windows") in
   *Package*) terminal omarchy-pkg-install ;;
   *AUR*) terminal omarchy-pkg-aur-install ;;
   *Flatpak*) terminal omarchy-install-flatpak ;;
@@ -23,7 +23,7 @@ show_install_menu() {
 }
 
 show_install_shell_menu() {
-  case $(menu "Install" "팜3a  Fish\n팜83  zsh (Oh My Zsh)") in
+  case $(menu "Install" "󰈺  Fish\n󱆃  zsh (Oh My Zsh)") in
   *Fish*) present_terminal "omarchy-install-shell fish" ;;
   *zsh*) present_terminal "omarchy-install-shell zsh" ;;
   *) show_install_menu ;;
