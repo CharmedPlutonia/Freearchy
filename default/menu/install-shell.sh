@@ -1,5 +1,6 @@
 # Sourced from omarchy-menu via ~/.config/omarchy/extensions/menu.sh
-# Redefines the Install menu so Shell sits next to Terminal.
+# Redefines the Install menu so Shell sits next to Terminal, and adds
+# Setup > Defaults > Shell for machines that already have Fish or zsh.
 
 show_install_menu() {
   case $(menu "Install" "󰣇  Package\n󰣇  AUR\n󰏖  Flatpak\n  Web App\n  TUI\n  Service\n  Style\n󰵮  Development\n  Editor\n  Terminal\n󱆃  Shell\n  Browser\n󱚤  AI\n  Gaming\n󰍲  Windows") in
@@ -27,5 +28,37 @@ show_install_shell_menu() {
   *Fish*) present_terminal "omarchy-install-shell fish" ;;
   *zsh*) present_terminal "omarchy-install-shell zsh" ;;
   *) show_install_menu ;;
+  esac
+}
+
+show_setup_default_menu() {
+  case $(menu "Default" "  Browser\n  Terminal\n  Editor\n󱆃  Shell") in
+  *Browser*) show_setup_default_browser_menu ;;
+  *Terminal*) show_setup_default_terminal_menu ;;
+  *Editor*) show_setup_default_editor_menu ;;
+  *Shell*) show_setup_default_shell_menu ;;
+  *) show_setup_menu ;;
+  esac
+}
+
+show_setup_default_shell_menu() {
+  local options="" current="" shell
+  shell=$(omarchy-default-shell 2>/dev/null || basename "$(getent passwd "$USER" | cut -d: -f7)")
+
+  command -v bash >/dev/null && options="  Bash"
+  command -v fish >/dev/null && options="${options:+$options\n}󰈺  Fish"
+  command -v zsh >/dev/null && options="${options:+$options\n}󱆃  zsh"
+
+  case "$shell" in
+  bash) current="  Bash" ;;
+  fish) current="󰈺  Fish" ;;
+  zsh) current="󱆃  zsh" ;;
+  esac
+
+  case $(menu "Default Shell" "$options" "" "$current") in
+  *Bash*) present_terminal "omarchy-default-shell bash" ;;
+  *Fish*) present_terminal "omarchy-default-shell fish" ;;
+  *zsh*) present_terminal "omarchy-default-shell zsh" ;;
+  *) show_setup_default_menu ;;
   esac
 }

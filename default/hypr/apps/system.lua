@@ -23,3 +23,8 @@ hl.window_rule({ match = { tag = [[pop]] }, rounding = 0 })
 
 -- Prevent idle while open
 hl.window_rule({ match = { tag = [[noidle]] }, idle_inhibit = [[always]] })
+
+-- About/fastfetch. Wider than the shared floating size so the logo does not wrap.
+hl.window_rule({ match = { class = [[org.omarchy.about]] }, float = true })
+hl.window_rule({ match = { class = [[org.omarchy.about]] }, center = true })
+hl.window_rule({ match = { class = [[org.omarchy.about]] }, size = { 1560, 860 } })

@@ -16,6 +16,22 @@ fi
 
 pkill slurp && exit 0
 
+# Walker is still closing when Capture > Screenshot returns. If slurp grabs
+# the pointer before that click is released, the selection is cancelled and
+# the script exits with no screenshot. Wait the menu out, then a beat more.
+wait_for_menu_close() {
+  local i
+  for ((i = 0; i < 40; i++)); do
+    if ! pgrep -f 'walker.*--dmenu' >/dev/null; then
+      break
+    fi
+    sleep 0.05
+  done
+  sleep 0.3
+}
+wait_for_menu_close
+
+
 SCREENSHOT_EDITOR="${OMARCHY_SCREENSHOT_EDITOR:-satty}"
 
 # Parse --editor flag from any position
