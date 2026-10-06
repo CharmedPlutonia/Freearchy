@@ -101,9 +101,10 @@
       "keyColor": "blue"
     },
     {
-      "type": "packages",
+      "type": "command",
       "key": "│ ├󰏖",
-      "keyColor": "blue"
+      "keyColor": "blue",
+      "text": "pacman -Qq 2>/dev/null | wc -l | awk '{print $1\" (pacman)\"}'"
     },
     {
       "type": "wmtheme",

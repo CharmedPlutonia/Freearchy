@@ -74,6 +74,9 @@ if [[ -f $FF ]]; then
 fi
 printf '%s\n' "$ACCENT" >"$BRAND_FILE"
 
-if [[ -d /usr/share/plymouth/themes/omarchy && -z ${OMARCHY_INSTALL_LOG_FILE:-} ]]; then
+# mkinitcpio is only needed after the Plymouth logo actually changes, and it
+# must never run from a non-interactive caller (About used to do this with
+# stdin redirected, so sudo waited forever for a password nobody could type).
+if [[ -d /usr/share/plymouth/themes/omarchy && -z ${OMARCHY_INSTALL_LOG_FILE:-} && -t 0 ]]; then
   sudo mkinitcpio -P >/dev/null || true
 fi
