@@ -73,5 +73,8 @@ omarchy-theme-set-shell
 omarchy-theme-set-bootloader
 omarchy-theme-set-tuigreet
 
+# myx progress, volume, and cava share the accent slot of this theme.
+bash "$OMARCHY_PATH/bin/omarchy-theme-set-myx" || true
+
 # Call hook on theme set
 omarchy-hook theme-set "$THEME_NAME" >/dev/null

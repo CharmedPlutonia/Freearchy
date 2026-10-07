@@ -1,0 +1,153 @@
+#!/bin/bash
+
+# omarchy:summary=Paint myx and cava from the active terminal theme
+# omarchy:hidden=true
+
+# Resolves ~/.config/myx/colors.toml against the active theme and writes
+# ~/.config/myx/palette.toml. Cava's [color] section uses the same accent as
+# myx's progress bar and volume meter. A missing role file gets the mocha map.
+
+COLORS_FILE="${HOME}/.config/myx/colors.toml"
+PALETTE_FILE="${HOME}/.config/myx/palette.toml"
+CAVA_FILE="${HOME}/.config/cava/config"
+THEME_COLORS="${HOME}/.config/omarchy/current/theme/colors.toml"
+NEXT_COLORS="${HOME}/.config/omarchy/current/next-theme/colors.toml"
+
+if [[ -f $NEXT_COLORS ]]; then
+  THEME_COLORS="$NEXT_COLORS"
+fi
+
+mkdir -p "${HOME}/.config/myx" "${HOME}/.config/cava"
+
+if [[ ! -f $COLORS_FILE ]]; then
+  cat >"$COLORS_FILE" <<'EOF'
+# Tell myx which terminal color is which role.
+# Slots: background, foreground, accent, color0-color15, or a #hex.
+# mode = "album" puts album-art recoloring back.
+
+mode = "terminal"
+
+[roles]
+background = "background"
+panel = "color0"
+element = "color8"
+text = "foreground"
+text_muted = "color7"
+border = "color8"
+border_active = "accent"
+border_subtle = "color0"
+border_dimmest = "color0"
+primary = "accent"
+accent = "accent"
+info = "accent"
+cava = "accent"
+secondary = "color5"
+error = "color1"
+warning = "color3"
+success = "color2"
+EOF
+fi
+
+if [[ ! -f $THEME_COLORS ]]; then
+  exit 0
+fi
+
+declare -A SLOT=()
+while IFS='=' read -r key value; do
+  key="${key//[\"' ]/}"
+  [[ $key && $key != \#* ]] || continue
+  value="${value#*[\"']}"
+  value="${value%%[\"']*}"
+  [[ $value == \#* ]] || continue
+  SLOT["$key"]="$value"
+done <"$THEME_COLORS"
+
+role_color() {
+  local role="$1"
+  local slot=""
+  local in_roles=0
+  while IFS= read -r line; do
+    [[ $line =~ ^\[roles\] ]] && in_roles=1 && continue
+    [[ $line =~ ^\[ && $in_roles -eq 1 ]] && break
+    [[ $line =~ ^[[:space:]]*# ]] && continue
+    if [[ $line =~ ^[[:space:]]*${role}[[:space:]]*= ]]; then
+      slot="${line#*=}"
+      slot="${slot//[\"' ]/}"
+      slot="${slot%%#*}"
+    fi
+  done <"$COLORS_FILE"
+  if [[ -z $slot ]]; then
+    case "$role" in
+      background) slot="background" ;;
+      panel|border_subtle|border_dimmest) slot="color0" ;;
+      element|border) slot="color8" ;;
+      text) slot="foreground" ;;
+      text_muted) slot="color7" ;;
+      secondary) slot="color5" ;;
+      error) slot="color1" ;;
+      warning) slot="color3" ;;
+      success) slot="color2" ;;
+      *) slot="accent" ;;
+    esac
+  fi
+  if [[ $slot == \#* ]]; then
+    printf '%s\n' "$slot"
+    return
+  fi
+  if [[ -n ${SLOT[$slot]:-} ]]; then
+    printf '%s\n' "${SLOT[$slot]}"
+    return
+  fi
+  if [[ $slot == accent && -n ${SLOT[color5]:-} ]]; then
+    printf '%s\n' "${SLOT[color5]}"
+    return
+  fi
+  printf '%s\n' "${SLOT[accent]:-#cba6f7}"
+}
+
+ACCENT="$(role_color accent)"
+BG="$(role_color background)"
+
+{
+  echo "# Resolved by omarchy-theme-set-myx from the active theme. Do not edit."
+  echo "background = \"${SLOT[background]:-$BG}\""
+  echo "foreground = \"${SLOT[foreground]:-#cdd6f4}\""
+  echo "accent = \"${SLOT[accent]:-$ACCENT}\""
+  for i in 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do
+    echo "color${i} = \"${SLOT[color$i]:-#45475a}\""
+  done
+} >"$PALETTE_FILE"
+
+COLOR_BLOCK="[color]
+; written by omarchy-theme-set-myx — same accent as myx progress and volume
+gradient = 0
+background = '${BG}'
+foreground = '${ACCENT}'
+"
+
+if [[ ! -f $CAVA_FILE ]]; then
+  printf '%s\n' "; cava config — [color] follows the myx accent" "" "$COLOR_BLOCK" >"$CAVA_FILE"
+else
+  python3 - "$CAVA_FILE" "$COLOR_BLOCK" <<'PY'
+import pathlib, sys
+path, block = sys.argv[1], sys.argv[2]
+text = pathlib.Path(path).read_text()
+lines = text.splitlines()
+start = next((i for i, line in enumerate(lines) if line.strip() == "[color]"), None)
+if start is None:
+    out = text if text.endswith("\n") else text + "\n"
+    out += "\n" + block
+    if not out.endswith("\n"):
+        out += "\n"
+else:
+    end = next((i for i, line in enumerate(lines[start + 1:], start + 1) if line.strip().startswith("[") and line.strip().endswith("]")), len(lines))
+    body = "\n".join(lines[:start]).rstrip("\n")
+    tail = "\n".join(lines[end:])
+    out = (body + "\n\n" if body else "") + block.rstrip("\n") + "\n"
+    if tail:
+        out += "\n" + tail
+        if not out.endswith("\n"):
+            out += "\n"
+pathlib.Path(path).write_text(out)
+PY
+fi
