@@ -151,3 +151,6 @@ else:
 pathlib.Path(path).write_text(out)
 PY
 fi
+
+echo "myx palette is ${ACCENT} on ${BG}."
+echo "Stock myx ignores that and stays Tokyo Night. If the UI did not change: omarchy install myx"
