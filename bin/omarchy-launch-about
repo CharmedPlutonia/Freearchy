@@ -2,24 +2,14 @@
 
 # omarchy:summary=Launch the fastfetch TUI that gives information about the current system.
 
-mkdir -p "${HOME}/.config/omarchy/branding"
-about="${HOME}/.config/omarchy/branding/about.txt"
-if [[ ! -s $about && -f $OMARCHY_PATH/icon.txt ]]; then
-  cp "$OMARCHY_PATH/icon.txt" "$about"
-fi
-
 # Do not call omarchy-branding-color here. It recolors Plymouth and can run
-# mkinitcpio -P. From About that either takes minutes or blocks forever on a
-# sudo password prompt whose stdin was redirected away.
+# mkinitcpio -P, which blocks About on a hidden sudo prompt.
 
-# The generic floating terminal is 875px. The About logo is 54 cells, and
-# U+2588 is often double-width, so that window wraps the logo and the info
-# boxes. Pin a wide class before launch so this works before Hyprland rules
-# are refreshed.
+# Compact info panel. The old About window was sized for a 54-cell block logo.
 if command -v hyprctl >/dev/null; then
   hyprctl keyword windowrule "float on, match:class org.omarchy.about" >/dev/null 2>&1 || true
   hyprctl keyword windowrule "center on, match:class org.omarchy.about" >/dev/null 2>&1 || true
-  hyprctl keyword windowrule "size 1560 860, match:class org.omarchy.about" >/dev/null 2>&1 || true
+  hyprctl keyword windowrule "size 520 360, match:class org.omarchy.about" >/dev/null 2>&1 || true
   addr=$(hyprctl clients -j 2>/dev/null | jq -r '.[] | select(.class == "org.omarchy.about") | .address' | head -n1)
   if [[ -n $addr ]]; then
     hyprctl dispatch focuswindow "address:$addr" >/dev/null
