@@ -3,27 +3,85 @@
 # omarchy:summary=Apply the current theme colors to greetd tuigreet
 # omarchy:hidden=true
 
-THEME_FILE="$HOME/.config/omarchy/current/theme/tuigreet.theme"
+THEME_DIR="$HOME/.config/omarchy/current/theme"
+THEME_FILE="$THEME_DIR/tuigreet.theme"
+COLORS_FILE="$THEME_DIR/colors.toml"
 GREETD_CONF="/etc/greetd/config.toml"
 DEFAULT_CONF="$OMARCHY_PATH/default/greetd/config.toml"
 
-[[ -f $THEME_FILE ]] || exit 0
-[[ -f $GREETD_CONF || -d /etc/greetd ]] || exit 0
+read_color() {
+  local key="$1" fallback="$2" value=""
+  if [[ -f $COLORS_FILE ]]; then
+    value=$(awk -F'"' -v key="$key" '$1 ~ "^" key "[[:space:]]*=" { print $2; exit }' "$COLORS_FILE")
+  fi
+  [[ $value =~ ^#[0-9A-Fa-f]{6}$ ]] || value="$fallback"
+  printf '%s' "$value"
+}
 
-if ! sudo -n true >/dev/null 2>&1; then
+if [[ ! -s $THEME_FILE && -f $COLORS_FILE ]]; then
+  accent=$(read_color accent "#20dff1")
+  foreground=$(read_color foreground "#cdd6f4")
+  background=$(read_color background "#1e1e2e")
+  color4=$(read_color color4 "$accent")
+  color6=$(read_color color6 "$accent")
+  printf 'border=%s;text=%s;prompt=%s;time=%s;action=%s;button=%s;container=%s;input=%s\n' \
+    "$accent" "$foreground" "$accent" "$color6" "$color4" "$accent" "$background" "$foreground" \
+    >"$THEME_FILE"
+fi
+
+[[ -s $THEME_FILE ]] || exit 0
+[[ -f $GREETD_CONF || -d /etc/greetd || -f $DEFAULT_CONF ]] || exit 0
+
+theme=$(tr -d '[:space:]' <"$THEME_FILE")
+[[ $theme == *"="* ]] || exit 0
+
+tmp=$(mktemp)
+if [[ -f $GREETD_CONF ]]; then
+  cat "$GREETD_CONF" >"$tmp"
+elif [[ -f $DEFAULT_CONF ]]; then
+  cat "$DEFAULT_CONF" >"$tmp"
+else
+  rm -f "$tmp"
   exit 0
 fi
 
-theme=$(<"$THEME_FILE")
-theme="${theme//$'\n'/}"
+python3 - "$tmp" "$theme" <<'PY'
+import re
+import sys
 
-if [[ ! -f $GREETD_CONF ]]; then
+path, theme = sys.argv[1], sys.argv[2]
+text = open(path).read()
+replaced = False
+
+def sub_theme(match):
+    global replaced
+    replaced = True
+    return f"--theme '{theme}'"
+
+text2 = re.sub(r"--theme\s+'[^']*'", sub_theme, text)
+text2 = re.sub(r'--theme\s+"[^"]*"', sub_theme, text2)
+if not replaced and "tuigreet" in text2:
+    text2 = re.sub(r"\btuigreet\b", f"tuigreet --theme '{theme}'", text2, count=1)
+    replaced = True
+if not replaced:
+    sys.exit(0)
+open(path, "w").write(text2)
+PY
+
+install_config() {
   sudo mkdir -p /etc/greetd
-  sudo cp "$DEFAULT_CONF" "$GREETD_CONF"
+  sudo cp "$tmp" "$GREETD_CONF"
+  sudo chmod 644 "$GREETD_CONF"
+}
+
+if sudo -n true >/dev/null 2>&1; then
+  install_config
+elif command -v pkexec >/dev/null; then
+  pkexec cp "$tmp" "$GREETD_CONF" && pkexec chmod 644 "$GREETD_CONF"
+else
+  notify-send "tuigreet theme not applied" "Could not write /etc/greetd/config.toml" -u normal || true
+  rm -f "$tmp"
+  exit 0
 fi
 
-if grep -q -- '--theme' "$GREETD_CONF"; then
-  sudo sed -i -E "s|--theme[[:space:]]+'[^']*'|--theme '${theme}'|g; s|--theme[[:space:]]+\"[^\"]*\"|--theme '${theme}'|g" "$GREETD_CONF"
-else
-  sudo sed -i -E "s|(command = \"tuigreet)|\1 --theme '${theme}'|" "$GREETD_CONF"
-fi
+rm -f "$tmp"
