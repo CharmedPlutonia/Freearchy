@@ -19,13 +19,12 @@ read_color() {
 }
 
 if [[ ! -s $THEME_FILE && -f $COLORS_FILE ]]; then
-  accent=$(read_color accent "#20dff1")
   foreground=$(read_color foreground "#cdd6f4")
   background=$(read_color background "#1e1e2e")
-  color4=$(read_color color4 "$accent")
-  color6=$(read_color color6 "$accent")
+  color4=$(read_color color4 "#89b4fa")
+  color6=$(read_color color6 "#94e2d5")
   printf 'border=%s;text=%s;prompt=%s;time=%s;action=%s;button=%s;container=%s;input=%s\n' \
-    "$accent" "$foreground" "$accent" "$color6" "$color4" "$accent" "$background" "$foreground" \
+    "$color4" "$foreground" "$color4" "$color6" "$color4" "$color4" "$background" "$foreground" \
     >"$THEME_FILE"
 fi
 

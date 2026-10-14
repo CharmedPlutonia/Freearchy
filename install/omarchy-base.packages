@@ -8,17 +8,12 @@ bluetui
 bolt
 brightnessctl
 btop
-ungoogled-chromium-widevine-bin
 clang
-claude-code
 cliamp
 cups
 cups-browsed
 cups-filters
 cups-pdf
-docker
-docker-buildx
-docker-compose
 dosfstools
 dotnet-runtime-9.0
 dust
@@ -67,15 +62,12 @@ less
 libsecret
 libyaml
 libqalculate
-libreoffice-fresh
 llvm
-localsend
 luarocks
 mako
 man-db
 mariadb-libs
 mise
-mpv
 nautilus
 nautilus-python
 gnome-disk-utility
@@ -84,7 +76,6 @@ noto-fonts-cjk
 noto-fonts-emoji
 nss-mdns
 nano
-obs-studio
 walker
 elephant
 elephant-desktopapplications
@@ -97,7 +88,6 @@ elephant-runner
 elephant-symbols
 elephant-websearch
 pamixer
-pinta
 playerctl
 plocate
 plymouth
@@ -115,7 +105,6 @@ satty
 greetd
 greetd-tuigreet
 slurp
-spotify
 socat
 starship
 sushi

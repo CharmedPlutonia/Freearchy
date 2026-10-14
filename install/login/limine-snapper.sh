@@ -237,6 +237,9 @@ EOF
   fi
 }
 
+choices_file="${HOME}/.config/omarchy/install-choices.env"
+[[ -f $choices_file ]] && source "$choices_file"
+
 limine_config=""
 if command -v limine >/dev/null || command -v limine-update >/dev/null; then
   limine_config=$(find_limine_config || true)
@@ -246,6 +249,28 @@ boot_grub=false
 if command -v grub-mkconfig >/dev/null || sudo test -f /boot/grub/grub.cfg; then
   boot_grub=true
 fi
+
+case ${FREEARCHY_BOOTLOADER:-auto} in
+limine)
+  boot_grub=false
+  if ! command -v limine >/dev/null; then
+    omarchy-pkg-add limine || echo "Warning: limine package did not install"
+  fi
+  [[ -n $limine_config ]] || limine_config=$(find_limine_config || true)
+  if [[ -z $limine_config && -f $OMARCHY_PATH/default/limine/limine.conf ]]; then
+    sudo mkdir -p /boot
+    sudo cp "$OMARCHY_PATH/default/limine/limine.conf" /boot/limine.conf
+    limine_config=/boot/limine.conf
+  fi
+  ;;
+grub)
+  limine_config=""
+  boot_grub=true
+  if ! command -v grub-mkconfig >/dev/null; then
+    omarchy-pkg-add grub || echo "Warning: grub package did not install"
+  fi
+  ;;
+esac
 
 if [[ -n $limine_config ]]; then
   setup_limine "$limine_config"

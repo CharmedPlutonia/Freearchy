@@ -118,8 +118,11 @@ run_logged() {
 
   echo "[$(date '+%Y-%m-%d %H:%M:%S')] Starting: $script" >>"$OMARCHY_INSTALL_LOG_FILE"
 
-  # Use bash -c to create a clean subshell
-  bash -c "source '$script'" </dev/null >>"$OMARCHY_INSTALL_LOG_FILE" 2>&1
+  # stdin was /dev/null, so sudo's password prompt timed out in the log
+  # (spotify did this after a long AUR build). Use the terminal when we have one.
+  local stdin=/dev/null
+  [[ -r /dev/tty ]] && stdin=/dev/tty
+  bash -c "source '$script'" <"$stdin" >>"$OMARCHY_INSTALL_LOG_FILE" 2>&1
 
   local exit_code=$?
 

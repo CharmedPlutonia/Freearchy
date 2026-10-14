@@ -74,6 +74,10 @@ restore_outputs() {
 
 # Error handler
 catch_errors() {
+  # Preserve the real status. EXIT calls us after a successful `if`, which
+  # would otherwise report "exit code 0" for a failed package script.
+  local exit_code=${1:-$?}
+
   # Prevent recursive error handling
   if [[ $ERROR_HANDLING == "true" ]]; then
     return
@@ -81,16 +85,13 @@ catch_errors() {
     ERROR_HANDLING=true
   fi
 
-  # Store exit code immediately before it gets overwritten
-  local exit_code=$?
-
   stop_log_output
   restore_outputs
 
   clear_logo
   show_cursor
 
-  gum style --foreground 1 --padding "1 0 1 $PADDING_LEFT" "Omarchy installation stopped!"
+  gum style --foreground 1 --padding "1 0 1 $PADDING_LEFT" "Freearchy installation stopped!"
   show_log_tail
 
   gum style "This command halted with exit code $exit_code:"
@@ -148,7 +149,7 @@ exit_handler() {
 
   # Only run if we're exiting with an error and haven't already handled it
   if (( exit_code != 0 )) && [[ $ERROR_HANDLING != "true" ]]; then
-    catch_errors
+    catch_errors "$exit_code"
   else
     stop_log_output
     show_cursor

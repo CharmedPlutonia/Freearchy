@@ -4,7 +4,7 @@
 # omarchy:args=<packages...>
 
 if omarchy-pkg-missing "$@"; then
-  yay -S --noconfirm --needed "$@" || exit 1
+  yay -S --noconfirm --needed --sudoloop "$@" || exit 1
 fi
 
 for pkg in "$@"; do
