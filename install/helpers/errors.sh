@@ -143,9 +143,21 @@ catch_errors() {
   done
 }
 
+cleanup_freearchy_sudo() {
+  if sudo -n test -f /etc/sudoers.d/99-freearchy-install 2>/dev/null; then
+    sudo -n rm -f /etc/sudoers.d/99-freearchy-install || true
+  fi
+  if [[ -n ${FREEARCHY_SUDO_KEEPALIVE_PID:-} ]]; then
+    kill "$FREEARCHY_SUDO_KEEPALIVE_PID" 2>/dev/null || true
+    unset FREEARCHY_SUDO_KEEPALIVE_PID
+  fi
+}
+
 # Exit handler - ensures cleanup happens on any exit
 exit_handler() {
   local exit_code=$?
+
+  cleanup_freearchy_sudo
 
   # Only run if we're exiting with an error and haven't already handled it
   if (( exit_code != 0 )) && [[ $ERROR_HANDLING != "true" ]]; then
