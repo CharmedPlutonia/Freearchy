@@ -1,3 +1,9 @@
+# Configure Docker daemon. Skipped unless Docker was selected at install.
+if ! pacman -Q docker &>/dev/null; then
+  echo "Docker was not selected; skipping docker setup"
+  return 0
+fi
+
 # Configure Docker daemon:
 # - limit log size to avoid running out of disk
 # - use host's DNS resolver

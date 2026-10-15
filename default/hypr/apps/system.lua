@@ -23,3 +23,8 @@ hl.window_rule({ match = { tag = [[pop]] }, rounding = 0 })
 
 -- Prevent idle while open
 hl.window_rule({ match = { tag = [[noidle]] }, idle_inhibit = [[always]] })
+
+-- Compact About panel.
+hl.window_rule({ match = { class = [[org.omarchy.about]] }, float = true })
+hl.window_rule({ match = { class = [[org.omarchy.about]] }, center = true })
+hl.window_rule({ match = { class = [[org.omarchy.about]] }, size = { 520, 360 } })

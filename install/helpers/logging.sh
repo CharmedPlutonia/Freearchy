@@ -1,44 +1,103 @@
 start_log_output() {
-  local ANSI_SAVE_CURSOR="\033[s"
-  local ANSI_RESTORE_CURSOR="\033[u"
-  local ANSI_CLEAR_LINE="\033[2K"
-  local ANSI_HIDE_CURSOR="\033[?25l"
-  local ANSI_RESET="\033[0m"
-  local ANSI_GRAY="\033[90m"
-
-  # Save cursor position and hide cursor
-  printf $ANSI_SAVE_CURSOR
-  printf $ANSI_HIDE_CURSOR
+  printf '\033[?25l' >/dev/tty
 
   (
-    local log_lines=20
-    local max_line_width=$((LOGO_WIDTH - 4))
+    local tips=(
+      "Super + Return opens a terminal."
+      "Super + Space launches an app."
+      "Super + Alt + Space opens the menu."
+      "Super + Escape opens the system menu."
+      "Super + K lists the key bindings."
+      "Super + Ctrl + C opens the capture menu."
+      "Super + Ctrl + Space changes the background."
+    )
+    local ntips=${#tips[@]}
 
     while true; do
-      # Read the last N lines into an array
-      mapfile -t current_lines < <(tail -n $log_lines "$OMARCHY_INSTALL_LOG_FILE" 2>/dev/null)
+      local cols pad done_n total pct fill width bar empty step detail tip frame line max
+      cols=$(stty size </dev/tty 2>/dev/null | awk '{print $2}')
+      [[ -n ${cols:-} ]] || cols=80
+      pad=$(((cols - LOGO_WIDTH) / 2))
+      if [[ $pad -lt 0 ]]; then
+        pad=0
+      fi
+      # A line that wraps is what scatters the logo.
+      if [[ $((pad + LOGO_WIDTH)) -gt $cols ]]; then
+        pad=0
+      fi
 
-      # Build complete output buffer with escape sequences
-      output=""
-      for ((i = 0; i < log_lines; i++)); do
-        line="${current_lines[i]:-}"
+      done_n=$(grep -c 'Completed:' "$OMARCHY_INSTALL_LOG_FILE" 2>/dev/null || true)
+      done_n=${done_n:-0}
+      total=${FREEARCHY_INSTALL_TOTAL:-1}
+      if [[ $total -lt 1 ]]; then
+        total=1
+      fi
+      if [[ $done_n -gt $total ]]; then
+        done_n=$total
+      fi
+      pct=$((done_n * 100 / total))
+      width=32
+      if [[ $((pad + width + 8)) -gt $cols ]]; then
+        width=$((cols - pad - 8))
+      fi
+      if [[ $width -lt 8 ]]; then
+        width=8
+      fi
+      fill=$((done_n * width / total))
+      bar=$(printf '%*s' "$fill" '' | tr ' ' '#')
+      empty=$(printf '%*s' "$((width - fill))" '' | tr ' ' '-')
 
-        # Truncate if needed
-        if (( ${#line} > max_line_width )); then
-          line="${line:0:$max_line_width}..."
-        fi
+      step=$(grep 'Starting:' "$OMARCHY_INSTALL_LOG_FILE" 2>/dev/null | tail -1 | sed 's#.*/##; s/\.sh$//')
+      case $step in
+        base) step="Base packages" ;;
+        choices) step="Chosen apps" ;;
+        fonts) step="Fonts" ;;
+        nvim) step="Editor" ;;
+        icons) step="Icons" ;;
+        webapps) step="Web apps" ;;
+        tuis) step="Terminal tools" ;;
+        "") step="Starting" ;;
+        *) step=${step//-/ } ;;
+      esac
 
-        # Add clear line escape and formatted output for each line
-        if [[ -n $line ]]; then
-          output+="${ANSI_CLEAR_LINE}${ANSI_GRAY}${PADDING_LEFT_SPACES}  → ${line}${ANSI_RESET}\n"
-        else
-          output+="${ANSI_CLEAR_LINE}${PADDING_LEFT_SPACES}\n"
-        fi
-      done
+      detail=$(tail -n 40 "$OMARCHY_INSTALL_LOG_FILE" 2>/dev/null | tr '\r' '\n' | awk '
+        /Starting:|Completed:|Failed:|^===/ { next }
+        /installing |upgrading |downloading |building |loading / { hit = $0 }
+        NF { last = $0 }
+        END { if (hit != "") print hit; else print last }
+      ')
+      detail=${detail#"${detail%%[![:space:]]*}"}
+      detail=${detail%"${detail##*[![:space:]]}"}
+      detail=${detail#:: }
+      max=$((cols - pad - 1))
+      if [[ $max -lt 10 ]]; then
+        max=10
+      fi
+      if [[ ${#detail} -gt $max ]]; then
+        detail="${detail:0:$max}"
+      fi
 
-      printf "${ANSI_RESTORE_CURSOR}%b" "$output"
+      tip=${tips[$(($(date +%s) / 5 % ntips))]}
 
-      sleep 0.1
+      frame=$'\033[40m\033[H'
+      while IFS= read -r line || [[ -n $line ]]; do
+        [[ -n $line ]] || continue
+        frame+=$(printf '%s%*s%s%s\033[K' "$FREEARCHY_BLUE_SEQ" "$pad" "" "$line" "$FREEARCHY_RESET")
+        frame+=$'\n'
+      done <"$LOGO_PATH"
+      frame+=$'\n'
+      frame+=$(printf '%s%*s%s%s\033[K' "$FREEARCHY_BLUE_SEQ" "$pad" "" "Installing" "$FREEARCHY_RESET")
+      frame+=$'\n\n'
+      frame+=$(printf '%s%*s[%s%s] %s%%%s\033[K' "$FREEARCHY_BLUE_SEQ" "$pad" "" "$bar" "$empty" "$pct" "$FREEARCHY_RESET")
+      frame+=$'\n\n'
+      frame+=$(printf '%*s%s\033[K' "$pad" "" "$step")
+      frame+=$'\n'
+      frame+=$(printf '%*s%s\033[K' "$pad" "" "$detail")
+      frame+=$'\n\n'
+      frame+=$(printf '%s%*s%s%s\033[K' $'\033[90m' "$pad" "" "$tip" "$FREEARCHY_RESET")
+      frame+=$'\n'
+      printf '%s' "$frame" >/dev/tty
+      sleep 0.5
     done
   ) &
   monitor_pid=$!
@@ -118,8 +177,11 @@ run_logged() {
 
   echo "[$(date '+%Y-%m-%d %H:%M:%S')] Starting: $script" >>"$OMARCHY_INSTALL_LOG_FILE"
 
-  # Use bash -c to create a clean subshell
-  bash -c "source '$script'" </dev/null >>"$OMARCHY_INSTALL_LOG_FILE" 2>&1
+  # stdin was /dev/null, so sudo's password prompt timed out in the log
+  # (spotify did this after a long AUR build). Use the terminal when we have one.
+  local stdin=/dev/null
+  [[ -r /dev/tty ]] && stdin=/dev/tty
+  bash -c "source '$script'" <"$stdin" >>"$OMARCHY_INSTALL_LOG_FILE" 2>&1
 
   local exit_code=$?
 

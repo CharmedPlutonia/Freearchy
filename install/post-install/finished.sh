@@ -23,6 +23,12 @@ fi
 if sudo test -f /etc/sudoers.d/99-omarchy-installer; then
   sudo rm -f /etc/sudoers.d/99-omarchy-installer &>/dev/null
 fi
+if sudo test -f /etc/sudoers.d/99-freearchy-install; then
+  sudo rm -f /etc/sudoers.d/99-freearchy-install &>/dev/null
+fi
+if [[ -n ${FREEARCHY_SUDO_KEEPALIVE_PID:-} ]]; then
+  kill "$FREEARCHY_SUDO_KEEPALIVE_PID" 2>/dev/null || true
+fi
 
 # Exit gracefully if user chooses not to reboot
 if gum confirm --padding "0 0 0 $((PADDING_LEFT + 32))" --show-help=false --default --affirmative "Reboot Now" --negative "" ""; then

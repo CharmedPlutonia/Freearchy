@@ -3,9 +3,10 @@
 # omarchy:summary=Display the Freearchy logo in the terminal.
 
 clear
-hex="#20dff1"
-if [[ -f ${HOME}/.config/omarchy/current/theme/colors.toml ]]; then
-  theme_hex="$(awk -F'"' '/^accent[[:space:]]*=/{print $2; exit}' "${HOME}/.config/omarchy/current/theme/colors.toml")"
+hex="#89b4fa"
+colors="${HOME}/.config/omarchy/current/theme/colors.toml"
+if [[ -f $colors ]]; then
+  theme_hex="$(awk -F'"' '/^color4[[:space:]]*=/{print $2; exit}' "$colors")"
   [[ $theme_hex =~ ^#[0-9A-Fa-f]{6}$ ]] && hex="$theme_hex"
 fi
 r=$((16#${hex:1:2}))

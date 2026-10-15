@@ -1,0 +1,31 @@
+# Tell myx which terminal color is which role.
+# Slots come from the active theme: background, foreground, accent, color0–color15.
+# A #hex is also fine. mode = "album" puts album-art recoloring back.
+
+mode = "terminal"
+
+[roles]
+# Surfaces and type
+background = "background"
+panel = "color0"
+element = "color8"
+text = "foreground"
+text_muted = "color7"
+border = "color8"
+border_active = "accent"
+border_subtle = "color0"
+border_dimmest = "color0"
+
+# The mocha default: progress, volume, and cava are the theme accent.
+# On Catppuccin Mocha that accent is mauve. On any other theme it is that
+# theme's accent, not a hardcoded hex.
+primary = "accent"
+accent = "accent"
+info = "accent"
+cava = "accent"
+
+# Everything else stays on the ANSI slot it had in the mocha map.
+secondary = "color5"
+error = "color1"
+warning = "color3"
+success = "color2"

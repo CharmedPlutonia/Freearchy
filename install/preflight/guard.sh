@@ -36,10 +36,7 @@ if pacman -Qe gnome-shell &>/dev/null || pacman -Qe plasma-desktop &>/dev/null; 
   abort "Fresh + Vanilla Arch"
 fi
 
-# Must have Limine or GRUB
-if ! command -v limine >/dev/null && ! command -v grub-mkconfig >/dev/null; then
-  abort "Limine or GRUB bootloader"
-fi
+# Bootloader is chosen in preflight/choices.sh. Limine or GRUB can be installed there.
 
 # Must have btrfs root filesystem
 [[ $(findmnt -n -o FSTYPE /) = "btrfs" ]] || abort "Btrfs root filesystem" 

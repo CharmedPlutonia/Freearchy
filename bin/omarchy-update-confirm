@@ -2,7 +2,7 @@
 
 # omarchy:summary=Prompt for confirmation before starting an update
 
-accent="#20dff1"
+accent="#89b4fa"
 colors="$HOME/.config/omarchy/current/theme/colors.toml"
 if [[ -f $colors ]]; then
   theme_accent="$(awk -F'"' '/^accent[[:space:]]*=/{print $2; exit}' "$colors")"

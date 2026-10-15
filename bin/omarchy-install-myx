@@ -1,0 +1,14 @@
+#!/bin/bash
+
+# omarchy:summary=Install the myx build that follows terminal colors
+# omarchy:examples=omarchy install myx
+
+if omarchy-cmd-missing cargo && omarchy-cmd-missing rustup; then
+  echo "Rust is required. Install it with: omarchy install dev-env"
+  exit 1
+fi
+
+echo "Replacing stock myx with the terminal-color build."
+cargo install --git https://github.com/CharmedPlutonia/Myx.git --force
+bash "$OMARCHY_PATH/bin/omarchy-theme-set-myx" || true
+echo "Quit myx and open it again. Progress, volume, and cava should match the theme accent."

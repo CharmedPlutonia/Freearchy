@@ -1,0 +1,56 @@
+#!/bin/bash
+
+# omarchy:summary=Print or set the login shell
+# omarchy:args=[bash|fish|zsh]
+# omarchy:examples=omarchy default shell | omarchy default shell fish
+# omarchy:requires-sudo=true
+
+set -euo pipefail
+
+login_shell() {
+  getent passwd "$USER" | cut -d: -f7
+}
+
+shell_path() {
+  case "$1" in
+  bash) command -v bash ;;
+  fish) command -v fish ;;
+  zsh) command -v zsh ;;
+  *) return 1 ;;
+  esac
+}
+
+if (($# == 0)); then
+  basename "$(login_shell)"
+  exit 0
+fi
+
+name="$1"
+if ! path="$(shell_path "$name")"; then
+  echo "Shell '$name' is not installed." >&2
+  echo "Install it from the menu (Install > Shell) or with: omarchy-install-shell $name" >&2
+  exit 1
+fi
+
+if ! grep -qxF "$path" /etc/shells; then
+  echo "Adding $path to /etc/shells"
+  echo "$path" | sudo tee -a /etc/shells >/dev/null
+fi
+
+current="$(login_shell)"
+if [[ $current == "$path" ]]; then
+  echo "$name is already the login shell ($path)"
+  notify-send -u low "$name is already the login shell" || true
+  exit 0
+fi
+
+echo "Setting login shell to $path"
+echo "Your password may be required."
+if ! sudo chsh -s "$path" "$USER"; then
+  echo "Could not change the login shell." >&2
+  exit 1
+fi
+
+notify-send -u low "$name is now the login shell" "Open a new terminal. Log out if one still starts the old shell." || true
+echo ""
+echo "$name is now the login shell. Open a new terminal to use it."

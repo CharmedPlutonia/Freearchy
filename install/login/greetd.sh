@@ -10,7 +10,7 @@ cat <<'EOF' | sudo tee /etc/greetd/config.toml >/dev/null
 vt = 1
 
 [default_session]
-command = "/usr/bin/tuigreet --time --remember --remember-session --asterisks --greeting 'Freearchy 1 beta' --power-shutdown '/usr/bin/systemctl poweroff' --power-reboot '/usr/bin/systemctl reboot' --cmd '/usr/bin/uwsm start -g -1 -e -D Hyprland hyprland.desktop'"
+command = "/usr/bin/tuigreet --time --remember --remember-session --asterisks --greeting 'Freearchy 1 beta' --theme 'border=#89b4fa;text=#cdd6f4;prompt=#89b4fa;time=#94e2d5;action=#89b4fa;button=#89b4fa;container=#1e1e2e;input=#cdd6f4' --power-shutdown '/usr/bin/systemctl poweroff' --power-reboot '/usr/bin/systemctl reboot' --cmd '/usr/bin/uwsm start -g -1 -e -D Hyprland hyprland.desktop'"
 user = "greeter"
 EOF
 
