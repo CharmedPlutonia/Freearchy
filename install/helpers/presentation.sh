@@ -39,6 +39,17 @@ else
 fi
 FREEARCHY_RESET=$'\033[0m'
 
+# Linux console: 16 colors, black background. Remap them to Catppuccin.
+# Truecolor terminals ignore this and keep #89b4fa.
+theme_console() {
+  local dev
+  dev=$(tty 2>/dev/null || true)
+  [[ ${TERM:-} == linux || $dev == /dev/tty[0-9]* ]] || return 0
+  printf '\033]P01e1e2e\033]P7cdd6f4\033]P86c7086\033]PC89b4fa\033]PFcdd6f4' >/dev/tty
+  printf '\033[40m' >/dev/tty
+}
+theme_console
+
 export GUM_CONFIRM_PROMPT_FOREGROUND="$FREEARCHY_BLUE"
 export GUM_CONFIRM_SELECTED_FOREGROUND="0"
 export GUM_CONFIRM_SELECTED_BACKGROUND="$FREEARCHY_BLUE"

@@ -34,6 +34,19 @@ fi
 RESET=$'\033[0m'
 DIM=$'\033[90m'
 
+# The Linux console only has 16 colors and a black background. Remap that
+# palette to Catppuccin so the blue and the background match. A real terminal
+# already has truecolor and is left alone.
+theme_console() {
+  local dev
+  dev=$(tty 2>/dev/null || true)
+  [[ ${TERM:-} == linux || $dev == /dev/tty[0-9]* ]] || return 0
+  printf '\033]P01e1e2e\033]P7cdd6f4\033]P86c7086\033]PC89b4fa\033]PFcdd6f4' >/dev/tty
+  printf '\033[40m' >/dev/tty
+}
+
+theme_console
+
 show_logo() {
   local cols line
   cols=$(stty size </dev/tty 2>/dev/null | awk '{print $2}')

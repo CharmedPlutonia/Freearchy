@@ -1,5 +1,5 @@
 start_log_output() {
-  printf '\033[?25l'
+  printf '\033[?25l' >/dev/tty
 
   (
     local tips=(
@@ -14,29 +14,90 @@ start_log_output() {
     local ntips=${#tips[@]}
 
     while true; do
-      local done_n total pct fill width bar empty current tip
+      local cols pad done_n total pct fill width bar empty step detail tip frame line max
+      cols=$(stty size </dev/tty 2>/dev/null | awk '{print $2}')
+      [[ -n ${cols:-} ]] || cols=80
+      pad=$(((cols - LOGO_WIDTH) / 2))
+      if [[ $pad -lt 0 ]]; then
+        pad=0
+      fi
+      # A line that wraps is what scatters the logo.
+      if [[ $((pad + LOGO_WIDTH)) -gt $cols ]]; then
+        pad=0
+      fi
+
       done_n=$(grep -c 'Completed:' "$OMARCHY_INSTALL_LOG_FILE" 2>/dev/null || true)
       done_n=${done_n:-0}
       total=${FREEARCHY_INSTALL_TOTAL:-1}
-      [[ $total -lt 1 ]] && total=1
+      if [[ $total -lt 1 ]]; then
+        total=1
+      fi
       if [[ $done_n -gt $total ]]; then
         done_n=$total
       fi
       pct=$((done_n * 100 / total))
       width=32
+      if [[ $((pad + width + 8)) -gt $cols ]]; then
+        width=$((cols - pad - 8))
+      fi
+      if [[ $width -lt 8 ]]; then
+        width=8
+      fi
       fill=$((done_n * width / total))
-      bar=$(printf '%*s' "$fill" '' | tr ' ' '█')
-      empty=$(printf '%*s' "$((width - fill))" '' | tr ' ' '░')
-      current=$(grep 'Starting:' "$OMARCHY_INSTALL_LOG_FILE" 2>/dev/null | tail -1 | sed 's#.*/##; s/\.sh$//; s/-/ /g')
-      [[ -n $current ]] || current="Starting"
+      bar=$(printf '%*s' "$fill" '' | tr ' ' '#')
+      empty=$(printf '%*s' "$((width - fill))" '' | tr ' ' '-')
+
+      step=$(grep 'Starting:' "$OMARCHY_INSTALL_LOG_FILE" 2>/dev/null | tail -1 | sed 's#.*/##; s/\.sh$//')
+      case $step in
+        base) step="Base packages" ;;
+        choices) step="Chosen apps" ;;
+        fonts) step="Fonts" ;;
+        nvim) step="Editor" ;;
+        icons) step="Icons" ;;
+        webapps) step="Web apps" ;;
+        tuis) step="Terminal tools" ;;
+        "") step="Starting" ;;
+        *) step=${step//-/ } ;;
+      esac
+
+      detail=$(tail -n 40 "$OMARCHY_INSTALL_LOG_FILE" 2>/dev/null | tr '\r' '\n' | awk '
+        /Starting:|Completed:|Failed:|^===/ { next }
+        /installing |upgrading |downloading |building |loading / { hit = $0 }
+        NF { last = $0 }
+        END { if (hit != "") print hit; else print last }
+      ')
+      detail=${detail#"${detail%%[![:space:]]*}"}
+      detail=${detail%"${detail##*[![:space:]]}"}
+      detail=${detail#:: }
+      max=$((cols - pad - 1))
+      if [[ $max -lt 10 ]]; then
+        max=10
+      fi
+      if [[ ${#detail} -gt $max ]]; then
+        detail="${detail:0:$max}"
+      fi
+
       tip=${tips[$(($(date +%s) / 5 % ntips))]}
 
-      clear_logo
-      printf '%s%*s%s%s\n\n' "$FREEARCHY_BLUE_SEQ" "$PADDING_LEFT" "" "Installing" "$FREEARCHY_RESET"
-      printf '%s%*s[%s%s] %s%%%s\n\n' "$FREEARCHY_BLUE_SEQ" "$PADDING_LEFT" "" "$bar" "$empty" "$pct" "$FREEARCHY_RESET"
-      printf '%*s%s\n\n' "$PADDING_LEFT" "" "$current"
-      printf '%s%*s%s%s\n' $'\033[90m' "$PADDING_LEFT" "" "$tip" "$FREEARCHY_RESET"
-      sleep 0.4
+      frame=$'\033[40m\033[H'
+      while IFS= read -r line || [[ -n $line ]]; do
+        [[ -n $line ]] || continue
+        frame+=$(printf '%s%*s%s%s\033[K' "$FREEARCHY_BLUE_SEQ" "$pad" "" "$line" "$FREEARCHY_RESET")
+        frame+=$'\n'
+      done <"$LOGO_PATH"
+      frame+=$'\n'
+      frame+=$(printf '%s%*s%s%s\033[K' "$FREEARCHY_BLUE_SEQ" "$pad" "" "Installing" "$FREEARCHY_RESET")
+      frame+=$'\n\n'
+      frame+=$(printf '%s%*s[%s%s] %s%%%s\033[K' "$FREEARCHY_BLUE_SEQ" "$pad" "" "$bar" "$empty" "$pct" "$FREEARCHY_RESET")
+      frame+=$'\n\n'
+      frame+=$(printf '%*s%s\033[K' "$pad" "" "$step")
+      frame+=$'\n'
+      frame+=$(printf '%*s%s\033[K' "$pad" "" "$detail")
+      frame+=$'\n\n'
+      frame+=$(printf '%s%*s%s%s\033[K' $'\033[90m' "$pad" "" "$tip" "$FREEARCHY_RESET")
+      frame+=$'\n'
+      printf '%s' "$frame" >/dev/tty
+      sleep 0.5
     done
   ) &
   monitor_pid=$!
