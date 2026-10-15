@@ -33,8 +33,10 @@
 #cpu,
 #battery,
 #pulseaudio,
+#backlight,
 #custom-omarchy,
-#custom-update {
+#custom-update,
+#language {
   min-width: 12px;
   margin: 0 7.5px;
 }

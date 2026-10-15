@@ -4,21 +4,31 @@
   "position": "top",
   "spacing": 0,
   "height": 26,
+  "fixed-center": true,
   "modules-left": ["custom/omarchy", "hyprland/workspaces"],
-  "modules-center": ["clock", "custom/weather", "custom/update", "custom/voxtype", "custom/screenrecording-indicator", "custom/idle-indicator", "custom/notification-silencing-indicator"],
+  "modules-center": [
+    "custom/screenrecording-indicator",
+    "custom/idle-indicator",
+    "custom/notification-silencing-indicator",
+    "custom/voxtype",
+    "clock",
+    "hyprland/language",
+    "custom/weather",
+    "custom/update"
+  ],
   "modules-right": [
     "group/tray-expander",
     "bluetooth",
     "network",
     "pulseaudio",
-    "cpu",
+    "backlight",
     "battery"
   ],
   "hyprland/workspaces": {
     "on-click": "activate",
     "format": "{icon}",
     "format-icons": {
-      "default": "",
+      "default": "\ue6f1",
       "1": "1",
       "2": "2",
       "3": "3",
@@ -29,7 +39,7 @@
       "8": "8",
       "9": "9",
       "10": "0",
-      "active": "󱓻"
+      "active": "\udb81\udefb"
     },
     "persistent-workspaces": {
       "1": [],
@@ -46,25 +56,26 @@
     "tooltip-format": "Freearchy Menu\n\nSuper + Alt + Space"
   },
   "custom/update": {
-    "format": "",
+    "format": "\uf021",
     "exec": "omarchy-update-available",
     "on-click": "omarchy-launch-floating-terminal-with-presentation omarchy-update",
-    "tooltip-format": "Freearchy 1 beta update available",
+    "tooltip-format": "Freearchy update available",
     "signal": 7,
     "interval": 21600
-  },
-
-  "cpu": {
-    "interval": 5,
-    "format": "󰍛",
-    "on-click": "omarchy-launch-or-focus-tui btop",
-    "on-click-right": "alacritty"
   },
   "clock": {
     "format": "{:L%A %H:%M}",
     "format-alt": "{:L%d %B W%V %Y}",
     "tooltip": false,
-    "on-click-right": "omarchy-launch-floating-terminal-with-presentation omarchy-tz-select"
+    "on-click-right": "omarchy-launch-floating-terminal-with-presentation omarchy-tz-select",
+    "on-click": "omarchy-launch-floating-terminal-with-presentation cal -3"
+  },
+  "hyprland/language": {
+    "format": "{}",
+    "format-en": "EN",
+    "min-length": 2,
+    "tooltip": true,
+    "on-click": "hyprctl switchxkblayout all next"
   },
   "custom/weather": {
     "exec": "$OMARCHY_PATH/default/waybar/weather.sh",
@@ -74,30 +85,31 @@
     "on-click": "notify-send -u low \"$(omarchy-weather-status)\""
   },
   "network": {
-    "format-icons": ["󰤯", "󰤟", "󰤢", "󰤥", "󰤨"],
+    "format-icons": ["\udb81\ude2f", "\udb81\ude1f", "\udb81\ude22", "\udb81\ude25", "\udb81\ude28"],
     "format": "{icon}",
     "format-wifi": "{icon}",
-    "format-ethernet": "󰀂",
-    "format-disconnected": "󰤮",
+    "format-ethernet": "\udb80\udc02",
+    "format-disconnected": "\udb81\ude2e",
     "tooltip-format-wifi": "{essid} ({frequency} GHz)",
     "tooltip-format-ethernet": "Connected",
     "tooltip-format-disconnected": "Disconnected",
     "interval": 3,
     "spacing": 1,
-    "on-click": "omarchy-launch-wifi"
+    "on-click": "omarchy-launch-wifi",
+    "on-click-right": "nmcli radio wifi toggle"
   },
   "battery": {
     "format": "{capacity}% {icon}",
     "format-discharging": "{icon}",
     "format-charging": "{icon}",
-    "format-plugged": "",
+    "format-plugged": "\uf1e6",
     "format-icons": {
-      "charging": ["󰢜", "󰂆", "󰂇", "󰂈", "󰢝", "󰂉", "󰢞", "󰂊", "󰂋", "󰂅"],
-      "default": ["󰁺", "󰁻", "󰁼", "󰁽", "󰁾", "󰁿", "󰂀", "󰂁", "󰂂", "󰁹"]
+      "charging": ["\udb81\ude1c", "\udb81\udc06", "\udb81\udc07", "\udb81\udc08", "\udb81\ude1d", "\udb81\udc09", "\udb81\ude1e", "\udb81\udc0a", "\udb81\udc0b", "\udb81\udc05"],
+      "default": ["\udb81\ude3a", "\udb81\ude3b", "\udb81\ude3c", "\udb81\ude3d", "\udb81\ude3e", "\udb81\ude3f", "\udb81\udc00", "\udb81\udc01", "\udb81\udc02", "\udb81\ude39"]
     },
-    "format-full": "󰂅",
-    "tooltip-format-discharging": "{power:>1.0f}W↓ {capacity}%",
-    "tooltip-format-charging": "{power:>1.0f}W↑ {capacity}%",
+    "format-full": "\udb81\udc05",
+    "tooltip-format-discharging": "{power:>1.0f}W\u2193 {capacity}%",
+    "tooltip-format-charging": "{power:>1.0f}W\u2191 {capacity}%",
     "interval": 5,
     "on-click": "omarchy-menu power",
     "on-click-right": "notify-send -u low \"$(omarchy-battery-status)\"",
@@ -107,26 +119,36 @@
     }
   },
   "bluetooth": {
-    "format": "",
-    "format-off": "󰂲",
-    "format-disabled": "󰂲",
-    "format-connected": "󰂱",
+    "format": "\uf294",
+    "format-off": "\udb81\udc32",
+    "format-disabled": "\udb81\udc32",
+    "format-connected": "\udb81\udc31",
     "format-no-controller": "",
     "tooltip-format": "Devices connected: {num_connections}",
-    "on-click": "omarchy-launch-bluetooth"
+    "on-click": "omarchy-launch-bluetooth",
+    "on-click-right": "bluetoothctl power toggle"
   },
   "pulseaudio": {
     "format": "{icon}",
     "on-click": "omarchy-launch-audio",
     "on-click-right": "pamixer -t",
+    "on-click-middle": "omarchy-launch-audio",
     "tooltip-format": "Playing at {volume}%",
     "scroll-step": 5,
-    "format-muted": "",
+    "format-muted": "\ueeb8",
     "format-icons": {
-      "headphone": "",
-      "headset": "",
-      "default": ["", "", ""]
+      "headphone": "\uf025",
+      "headset": "\uf025",
+      "default": ["\uf026", "\uf027", "\uf028"]
     }
+  },
+  "backlight": {
+    "format": "{icon}",
+    "format-icons": ["\udb80\udc1a", "\udb80\udc1b", "\udb80\udc1c", "\udb80\udc1d", "\udb80\udc1e", "\udb80\udc1f", "\udb80\udc20", "\udb80\udc21", "\udb80\udc22", "\udb80\udc23", "\udb80\udc24"],
+    "on-click": "omarchy-brightness-display",
+    "on-scroll-up": "brightnessctl set 5%+",
+    "on-scroll-down": "brightnessctl set 5%-",
+    "tooltip-format": "Brightness {percent}%"
   },
   "group/tray-expander": {
     "orientation": "inherit",
@@ -137,7 +159,7 @@
     "modules": ["custom/expand-icon", "tray"]
   },
   "custom/expand-icon": {
-    "format": "",
+    "format": "\uf053",
     "tooltip": false,
     "on-scroll-up": "",
     "on-scroll-down": "",
@@ -168,8 +190,8 @@
     "format": "{icon}",
     "format-icons": {
       "idle": "",
-      "recording": "󰍬",
-      "transcribing": "󰔟"
+      "recording": "\udb81\ude6c",
+      "transcribing": "\udb81\udd1f"
     },
     "tooltip": true,
     "on-click-right": "omarchy-voxtype-config",
