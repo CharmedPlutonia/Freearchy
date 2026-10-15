@@ -9,15 +9,16 @@ if [[ ! -t 0 && -e /dev/tty ]]; then
 fi
 
 hold_sudo() {
-  clear_logo
-  echo
-  printf '%s%*s%s%s\n' "$FREEARCHY_BLUE_SEQ" "$PADDING_LEFT" "" "Password" "$FREEARCHY_RESET"
-  echo
-  printf '%*s%s\n' "$PADDING_LEFT" "" "Asked once. It stays valid until the install finishes."
-  echo
-
-  # The only password prompt. Everything after this reuses the ticket.
-  sudo -v </dev/tty
+  # boot.sh already asked, and it is holding the ticket.
+  if ! sudo -n true 2>/dev/null; then
+    clear_logo
+    echo
+    printf '%s%*s%s%s\n' "$FREEARCHY_BLUE_SEQ" "$PADDING_LEFT" "" "Password" "$FREEARCHY_RESET"
+    echo
+    printf '%*s%s\n' "$PADDING_LEFT" "" "Asked once. It stays valid until the install finishes."
+    echo
+    sudo -v </dev/tty
+  fi
 
   local tmp
   tmp=$(mktemp)
@@ -50,12 +51,17 @@ choose_one() {
   shift 2
   step "$title"
 
-  local pick=""
+  local pick="" out
+  out=$(mktemp)
   if command -v gum >/dev/null 2>&1; then
-    pick=$(gum choose --height 10 --cursor "> " --selected "$selected" "$@") || true
+    # Draw on the terminal. Capturing gum without /dev/tty swallows the menu
+    # when this installer was started from a pipe.
+    gum choose --height 10 --cursor "> " --selected "$selected" "$@" </dev/tty >"$out" || true
+    pick=$(head -n 1 "$out" 2>/dev/null || true)
   fi
-  if [[ -n $pick ]]; then
-    printf '%s\n' "$pick"
+  rm -f "$out"
+  if [[ -n $pick && $pick != "nothing selected" ]]; then
+    CHOICE=$pick
     return 0
   fi
 
@@ -70,12 +76,12 @@ choose_one() {
   i=1
   for opt in "$@"; do
     if ((i == n)); then
-      printf '%s\n' "$opt"
+      CHOICE=$opt
       return 0
     fi
     ((i++)) || true
   done
-  printf '%s\n' "$1"
+  CHOICE=$1
 }
 
 choose_many() {
@@ -83,42 +89,49 @@ choose_many() {
   shift
   step "$title"
 
-  local pick=""
+  local pick="" out
+  out=$(mktemp)
   if command -v gum >/dev/null 2>&1; then
-    # Footer from gum is the only key hint. No header above it.
-    pick=$(gum choose --no-limit --height 10 --cursor "> " "$@") || true
-    printf '%s\n' "$pick"
+    gum choose --no-limit --height 10 --cursor "> " "$@" </dev/tty >"$out" || true
+    pick=$(cat "$out" 2>/dev/null || true)
+    rm -f "$out"
+    CHOICE=$pick
     return 0
   fi
+  rm -f "$out"
 
   printf '%*s%s\n' "$PADDING_LEFT" "" "Names separated by spaces, or empty to skip." >&2
   local line=""
   read -r -p "$(printf '%*s> ' "$PADDING_LEFT" "")" line </dev/tty || line=""
-  printf '%s\n' "$line"
+  CHOICE=$line
 }
 
 hold_sudo
 
-FREEARCHY_BOOTLOADER=$(choose_one "Bootloader" "Limine" "Limine" "GRUB")
+choose_one "Bootloader" "Limine" "Limine" "GRUB"
+FREEARCHY_BOOTLOADER=$CHOICE
 case "$FREEARCHY_BOOTLOADER" in
 Limine) FREEARCHY_BOOTLOADER=limine ;;
 GRUB) FREEARCHY_BOOTLOADER=grub ;;
 *) FREEARCHY_BOOTLOADER=limine ;;
 esac
 
-FREEARCHY_SHELL=$(choose_one "Shell" "bash" "bash" "fish" "zsh")
+choose_one "Shell" "bash" "bash" "fish" "zsh"
+FREEARCHY_SHELL=$CHOICE
 case "$FREEARCHY_SHELL" in
 bash | fish | zsh) ;;
 *) FREEARCHY_SHELL=bash ;;
 esac
 
-FREEARCHY_TERMINAL=$(choose_one "Terminal" "alacritty" "alacritty" "foot" "ghostty" "kitty")
+choose_one "Terminal" "alacritty" "alacritty" "foot" "ghostty" "kitty"
+FREEARCHY_TERMINAL=$CHOICE
 case "$FREEARCHY_TERMINAL" in
 alacritty | foot | ghostty | kitty) ;;
 *) FREEARCHY_TERMINAL=alacritty ;;
 esac
 
-FREEARCHY_BROWSER=$(choose_one "Browser" "Ungoogled Chromium" "Ungoogled Chromium" "Chromium" "Firefox" "Zen" "Brave" "Chrome" "Edge")
+choose_one "Browser" "Ungoogled Chromium" "Ungoogled Chromium" "Chromium" "Firefox" "Zen" "Brave" "Chrome" "Edge"
+FREEARCHY_BROWSER=$CHOICE
 case "$FREEARCHY_BROWSER" in
 "Ungoogled Chromium") FREEARCHY_BROWSER=ungoogled ;;
 Chromium) FREEARCHY_BROWSER=chromium ;;
@@ -130,7 +143,8 @@ Edge) FREEARCHY_BROWSER=edge ;;
 *) FREEARCHY_BROWSER=ungoogled ;;
 esac
 
-app_lines=$(choose_many "Apps" "Spotify" "OBS Studio" "LibreOffice" "Docker" "LocalSend" "Pinta" "mpv")
+choose_many "Apps" "Spotify" "OBS Studio" "LibreOffice" "Docker" "LocalSend" "Pinta" "mpv"
+app_lines=$CHOICE
 FREEARCHY_APPS=""
 while IFS= read -r app; do
   [[ -n $app ]] || continue
@@ -146,7 +160,8 @@ while IFS= read -r app; do
 done <<<"$app_lines"
 FREEARCHY_APPS=${FREEARCHY_APPS# }
 
-ai_lines=$(choose_many "AI" "Claude Code" "OpenCode" "Ollama" "LM Studio" "Crush")
+choose_many "AI" "Claude Code" "OpenCode" "Ollama" "LM Studio" "Crush"
+ai_lines=$CHOICE
 FREEARCHY_AI=""
 while IFS= read -r ai; do
   [[ -n $ai ]] || continue

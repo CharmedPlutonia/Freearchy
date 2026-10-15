@@ -1,6 +1,7 @@
-# Ensure we have gum available
+# Gum draws the menus. If it cannot be installed, the numbered fallback still asks.
 if ! command -v gum &>/dev/null; then
-  omarchy-pkg-add gum
+  echo "Preparing the choice menus..."
+  omarchy-pkg-add gum || true
 fi
 
 # Get terminal size from /dev/tty (works in all scenarios: direct, sourced, or piped)
@@ -11,12 +12,10 @@ if [[ -e /dev/tty ]]; then
     export TERM_HEIGHT=$(echo "$TERM_SIZE" | cut -d' ' -f1)
     export TERM_WIDTH=$(echo "$TERM_SIZE" | cut -d' ' -f2)
   else
-    # Fallback to reasonable defaults if stty fails
     export TERM_WIDTH=80
     export TERM_HEIGHT=24
   fi
 else
-  # No terminal available (e.g., non-interactive environment)
   export TERM_WIDTH=80
   export TERM_HEIGHT=24
 fi
