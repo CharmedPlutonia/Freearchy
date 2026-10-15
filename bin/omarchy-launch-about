@@ -2,22 +2,4 @@
 
 # omarchy:summary=Launch the fastfetch TUI that gives information about the current system.
 
-# Do not call omarchy-branding-color here. It recolors Plymouth and can run
-# mkinitcpio -P, which blocks About on a hidden sudo prompt.
-
-# Compact info panel. The old About window was sized for a 54-cell block logo.
-if command -v hyprctl >/dev/null; then
-  hyprctl keyword windowrule "float on, match:class org.omarchy.about" >/dev/null 2>&1 || true
-  hyprctl keyword windowrule "center on, match:class org.omarchy.about" >/dev/null 2>&1 || true
-  hyprctl keyword windowrule "size 520 360, match:class org.omarchy.about" >/dev/null 2>&1 || true
-  addr=$(hyprctl clients -j 2>/dev/null | jq -r '.[] | select(.class == "org.omarchy.about") | .address' | head -n1)
-  if [[ -n $addr ]]; then
-    hyprctl dispatch focuswindow "address:$addr" >/dev/null
-    exit 0
-  fi
-fi
-
-exec setsid uwsm-app -- xdg-terminal-exec \
-  --app-id=org.omarchy.about \
-  --title=About \
-  -e bash -c 'fastfetch; printf "\nPress any key to close"; read -n 1 -s'
+exec omarchy-launch-or-focus-tui "bash -c 'fastfetch; read -n 1 -s'"

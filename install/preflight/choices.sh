@@ -9,48 +9,63 @@ if [[ ! -t 0 && -e /dev/tty ]]; then
 fi
 
 hold_sudo() {
-  echo "Your password is asked once, here, before packages build." >&2
-  echo "It stays valid for the whole install, including AUR packages like Spotify." >&2
+  clear_logo
+  echo
+  printf '%s%*s%s%s\n' "$FREEARCHY_BLUE_SEQ" "$PADDING_LEFT" "" "Password" "$FREEARCHY_RESET"
+  echo
+  printf '%*s%s\n' "$PADDING_LEFT" "" "Asked once. It stays valid until the install finishes."
+  echo
+
+  # The only password prompt. Everything after this reuses the ticket.
   sudo -v </dev/tty
 
   local tmp
   tmp=$(mktemp)
-  printf '%s\n' "Defaults timestamp_type=global" "Defaults timestamp_timeout=180" >"$tmp"
-  sudo visudo -cf "$tmp"
-  sudo cp "$tmp" /etc/sudoers.d/99-freearchy-install
-  sudo chmod 440 /etc/sudoers.d/99-freearchy-install
+  printf '%s\n' 'Defaults timestamp_timeout=180' >"$tmp"
+  if sudo visudo -cf "$tmp" >/dev/null; then
+    sudo cp "$tmp" /etc/sudoers.d/99-freearchy-install
+    sudo chmod 440 /etc/sudoers.d/99-freearchy-install
+  fi
   rm -f "$tmp"
 
+  # Do not switch timestamp_type. A global ticket does not see the tty
+  # ticket sudo -v just created, so the next sudo asks again and times out
+  # while the install is unattended.
   if [[ -z ${FREEARCHY_SUDO_KEEPALIVE_PID:-} ]]; then
-    while true; do
-      sudo -n true || true
-      sleep 50
-    done &
+    (
+      while true; do
+        sudo -n true || true
+        sleep 50
+      done
+    ) &
     FREEARCHY_SUDO_KEEPALIVE_PID=$!
+    disown "$FREEARCHY_SUDO_KEEPALIVE_PID" 2>/dev/null || true
     export FREEARCHY_SUDO_KEEPALIVE_PID
   fi
 }
 
 choose_one() {
-  local header="$1"
-  shift
+  local title="$1"
+  local selected="$2"
+  shift 2
+  step "$title"
+
   local pick=""
   if command -v gum >/dev/null 2>&1; then
-    pick=$(gum choose --header "$header" "$@" || true)
+    pick=$(gum choose --height 10 --cursor "> " --selected "$selected" "$@") || true
   fi
   if [[ -n $pick ]]; then
     printf '%s\n' "$pick"
     return 0
   fi
 
-  echo "$header" >&2
   local i=1 opt
   for opt in "$@"; do
-    echo "  $i) $opt" >&2
+    printf '%*s  %s) %s\n' "$PADDING_LEFT" "" "$i" "$opt" >&2
     ((i++)) || true
   done
   local n=""
-  read -r -p "> " n </dev/tty || n=1
+  read -r -p "$(printf '%*s> ' "$PADDING_LEFT" "")" n </dev/tty || n=1
   [[ $n =~ ^[0-9]+$ ]] || n=1
   i=1
   for opt in "$@"; do
@@ -64,45 +79,46 @@ choose_one() {
 }
 
 choose_many() {
-  local header="$1"
+  local title="$1"
   shift
+  step "$title"
+
   local pick=""
   if command -v gum >/dev/null 2>&1; then
-    pick=$(gum choose --no-limit --header "$header" "$@" || true)
+    # Footer from gum is the only key hint. No header above it.
+    pick=$(gum choose --no-limit --height 10 --cursor "> " "$@") || true
     printf '%s\n' "$pick"
     return 0
   fi
 
-  echo "$header" >&2
-  echo "Names separated by spaces, or empty to skip." >&2
+  printf '%*s%s\n' "$PADDING_LEFT" "" "Names separated by spaces, or empty to skip." >&2
   local line=""
-  read -r -p "> " line </dev/tty || line=""
+  read -r -p "$(printf '%*s> ' "$PADDING_LEFT" "")" line </dev/tty || line=""
   printf '%s\n' "$line"
 }
 
-clear_logo
-gum style --foreground "#89b4fa" --padding "1 0 1 $PADDING_LEFT" "Choose what Freearchy installs. Enter confirms. On lists marked multi, space toggles."
+hold_sudo
 
-FREEARCHY_BOOTLOADER=$(choose_one "Bootloader" "Limine" "GRUB")
+FREEARCHY_BOOTLOADER=$(choose_one "Bootloader" "Limine" "Limine" "GRUB")
 case "$FREEARCHY_BOOTLOADER" in
 Limine) FREEARCHY_BOOTLOADER=limine ;;
 GRUB) FREEARCHY_BOOTLOADER=grub ;;
 *) FREEARCHY_BOOTLOADER=limine ;;
 esac
 
-FREEARCHY_SHELL=$(choose_one "Shell" "bash" "fish" "zsh")
+FREEARCHY_SHELL=$(choose_one "Shell" "bash" "bash" "fish" "zsh")
 case "$FREEARCHY_SHELL" in
 bash | fish | zsh) ;;
 *) FREEARCHY_SHELL=bash ;;
 esac
 
-FREEARCHY_TERMINAL=$(choose_one "Terminal" "alacritty" "foot" "ghostty" "kitty")
+FREEARCHY_TERMINAL=$(choose_one "Terminal" "alacritty" "alacritty" "foot" "ghostty" "kitty")
 case "$FREEARCHY_TERMINAL" in
 alacritty | foot | ghostty | kitty) ;;
 *) FREEARCHY_TERMINAL=alacritty ;;
 esac
 
-FREEARCHY_BROWSER=$(choose_one "Browser" "Ungoogled Chromium" "Chromium" "Firefox" "Zen" "Brave" "Chrome" "Edge")
+FREEARCHY_BROWSER=$(choose_one "Browser" "Ungoogled Chromium" "Ungoogled Chromium" "Chromium" "Firefox" "Zen" "Brave" "Chrome" "Edge")
 case "$FREEARCHY_BROWSER" in
 "Ungoogled Chromium") FREEARCHY_BROWSER=ungoogled ;;
 Chromium) FREEARCHY_BROWSER=chromium ;;
@@ -114,7 +130,7 @@ Edge) FREEARCHY_BROWSER=edge ;;
 *) FREEARCHY_BROWSER=ungoogled ;;
 esac
 
-app_lines=$(choose_many "Apps  ·  space selects, enter confirms" "Spotify" "OBS Studio" "LibreOffice" "Docker" "LocalSend" "Pinta" "mpv")
+app_lines=$(choose_many "Apps" "Spotify" "OBS Studio" "LibreOffice" "Docker" "LocalSend" "Pinta" "mpv")
 FREEARCHY_APPS=""
 while IFS= read -r app; do
   [[ -n $app ]] || continue
@@ -130,7 +146,7 @@ while IFS= read -r app; do
 done <<<"$app_lines"
 FREEARCHY_APPS=${FREEARCHY_APPS# }
 
-ai_lines=$(choose_many "AI  ·  space selects, enter confirms" "Claude Code" "OpenCode" "Ollama" "LM Studio" "Crush")
+ai_lines=$(choose_many "AI" "Claude Code" "OpenCode" "Ollama" "LM Studio" "Crush")
 FREEARCHY_AI=""
 while IFS= read -r ai; do
   [[ -n $ai ]] || continue
@@ -161,5 +177,3 @@ echo "Terminal: $FREEARCHY_TERMINAL" >&2
 echo "Browser: $FREEARCHY_BROWSER" >&2
 echo "Apps: ${FREEARCHY_APPS:-none}" >&2
 echo "AI: ${FREEARCHY_AI:-none}" >&2
-
-hold_sudo
