@@ -106,6 +106,18 @@ choose_many() {
   CHOICE=$line
 }
 
+if [[ -f $choices_file ]]; then
+  # shellcheck disable=SC1090
+  source "$choices_file"
+fi
+
+# boot.sh already asked. Do not show a second, older questionnaire.
+if [[ -n ${FREEARCHY_BOOTLOADER:-} && -n ${FREEARCHY_SHELL:-} && -n ${FREEARCHY_TERMINAL:-} && -n ${FREEARCHY_BROWSER:-} ]]; then
+  export FREEARCHY_BOOTLOADER FREEARCHY_SHELL FREEARCHY_TERMINAL FREEARCHY_BROWSER FREEARCHY_APPS FREEARCHY_AI
+  hold_sudo
+  return 0 2>/dev/null || exit 0
+fi
+
 hold_sudo
 
 choose_one "Bootloader" "Limine" "Limine" "GRUB"
