@@ -72,3 +72,7 @@ step() {
   printf '%s%*s%s%s\n' "$FREEARCHY_BLUE_SEQ" "$PADDING_LEFT" "" "$1" "$FREEARCHY_RESET"
   echo
 }
+
+export FREEARCHY_BLUE_SEQ FREEARCHY_RESET
+export -f clear_logo
+

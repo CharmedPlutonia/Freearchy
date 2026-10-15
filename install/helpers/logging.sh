@@ -1,44 +1,42 @@
 start_log_output() {
-  local ANSI_SAVE_CURSOR="\033[s"
-  local ANSI_RESTORE_CURSOR="\033[u"
-  local ANSI_CLEAR_LINE="\033[2K"
-  local ANSI_HIDE_CURSOR="\033[?25l"
-  local ANSI_RESET="\033[0m"
-  local ANSI_GRAY="\033[90m"
-
-  # Save cursor position and hide cursor
-  printf $ANSI_SAVE_CURSOR
-  printf $ANSI_HIDE_CURSOR
+  printf '\033[?25l'
 
   (
-    local log_lines=20
-    local max_line_width=$((LOGO_WIDTH - 4))
+    local tips=(
+      "Super + Return opens a terminal."
+      "Super + Space launches an app."
+      "Super + Alt + Space opens the menu."
+      "Super + Escape opens the system menu."
+      "Super + K lists the key bindings."
+      "Super + Ctrl + C opens the capture menu."
+      "Super + Ctrl + Space changes the background."
+    )
+    local ntips=${#tips[@]}
 
     while true; do
-      # Read the last N lines into an array
-      mapfile -t current_lines < <(tail -n $log_lines "$OMARCHY_INSTALL_LOG_FILE" 2>/dev/null)
+      local done_n total pct fill width bar empty current tip
+      done_n=$(grep -c 'Completed:' "$OMARCHY_INSTALL_LOG_FILE" 2>/dev/null || true)
+      done_n=${done_n:-0}
+      total=${FREEARCHY_INSTALL_TOTAL:-1}
+      [[ $total -lt 1 ]] && total=1
+      if [[ $done_n -gt $total ]]; then
+        done_n=$total
+      fi
+      pct=$((done_n * 100 / total))
+      width=32
+      fill=$((done_n * width / total))
+      bar=$(printf '%*s' "$fill" '' | tr ' ' '█')
+      empty=$(printf '%*s' "$((width - fill))" '' | tr ' ' '░')
+      current=$(grep 'Starting:' "$OMARCHY_INSTALL_LOG_FILE" 2>/dev/null | tail -1 | sed 's#.*/##; s/\.sh$//; s/-/ /g')
+      [[ -n $current ]] || current="Starting"
+      tip=${tips[$(($(date +%s) / 5 % ntips))]}
 
-      # Build complete output buffer with escape sequences
-      output=""
-      for ((i = 0; i < log_lines; i++)); do
-        line="${current_lines[i]:-}"
-
-        # Truncate if needed
-        if (( ${#line} > max_line_width )); then
-          line="${line:0:$max_line_width}..."
-        fi
-
-        # Add clear line escape and formatted output for each line
-        if [[ -n $line ]]; then
-          output+="${ANSI_CLEAR_LINE}${ANSI_GRAY}${PADDING_LEFT_SPACES}  → ${line}${ANSI_RESET}\n"
-        else
-          output+="${ANSI_CLEAR_LINE}${PADDING_LEFT_SPACES}\n"
-        fi
-      done
-
-      printf "${ANSI_RESTORE_CURSOR}%b" "$output"
-
-      sleep 0.1
+      clear_logo
+      printf '%s%*s%s%s\n\n' "$FREEARCHY_BLUE_SEQ" "$PADDING_LEFT" "" "Installing" "$FREEARCHY_RESET"
+      printf '%s%*s[%s%s] %s%%%s\n\n' "$FREEARCHY_BLUE_SEQ" "$PADDING_LEFT" "" "$bar" "$empty" "$pct" "$FREEARCHY_RESET"
+      printf '%*s%s\n\n' "$PADDING_LEFT" "" "$current"
+      printf '%s%*s%s%s\n' $'\033[90m' "$PADDING_LEFT" "" "$tip" "$FREEARCHY_RESET"
+      sleep 0.4
     done
   ) &
   monitor_pid=$!

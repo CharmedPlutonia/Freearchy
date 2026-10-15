@@ -35,12 +35,12 @@ RESET=$'\033[0m'
 DIM=$'\033[90m'
 
 show_logo() {
-  local cols pad line
+  local cols line
   cols=$(stty size </dev/tty 2>/dev/null | awk '{print $2}')
   [[ -n ${cols:-} ]] || cols=80
   pad=$(( (cols - 71) / 2 ))
   [[ $pad -lt 0 ]] && pad=0
-  printf '\033[H\033[2J'
+  printf '\033[H\033[2J\033[?25l'
   while IFS= read -r line; do
     [[ -n $line ]] || continue
     printf '%s%*s%s%s\n' "$COLOR" "$pad" "" "$line" "$RESET"
@@ -48,12 +48,25 @@ show_logo() {
   echo
 }
 
+say() {
+  printf '%s%*s%s%s\n' "$1" "$pad" "" "$2" "$RESET"
+}
+
+footer() {
+  local rows
+  rows=$(stty size </dev/tty 2>/dev/null | awk '{print $1}')
+  [[ -n ${rows:-} ]] || rows=24
+  printf '\033[%s;1H\033[2K%s%*s%s%s' "$rows" "$DIM" "$pad" "" "$1" "$RESET"
+}
+
 ask_password() {
   show_logo
-  printf '%sPassword%s\n' "$COLOR" "$RESET"
+  say "$COLOR" "Password"
   echo
-  echo "Asked once. It stays valid until the install finishes."
+  say "$RESET" "Asked once. It stays valid until the install finishes."
   echo
+  footer "enter continue"
+  printf '\033[?25h'
   sudo -v </dev/tty
 
   local tmp_sudo
@@ -90,23 +103,29 @@ menu() {
 
   while true; do
     show_logo
-    printf '%s%s%s\n\n' "$COLOR" "$title" "$RESET"
+    say "$COLOR" "$title"
+    echo
     for ((i = 0; i < n; i++)); do
       cursor=" "
       [[ $i -eq $idx ]] && cursor=">"
       if [[ $multi == 1 ]]; then
         mark="○"
         [[ " ${on[*]-} " == *" ${opts[i]} "* ]] && mark="●"
-        printf '  %s %s %s\n' "$cursor" "$mark" "${opts[i]}"
+        if [[ $i -eq $idx || " ${on[*]-} " == *" ${opts[i]} "* ]]; then
+          say "$COLOR" "  $cursor $mark ${opts[i]}"
+        else
+          say "$RESET" "  $cursor $mark ${opts[i]}"
+        fi
+      elif [[ $i -eq $idx ]]; then
+        say "$COLOR" "  $cursor ${opts[i]}"
       else
-        printf '  %s %s\n' "$cursor" "${opts[i]}"
+        say "$RESET" "  $cursor ${opts[i]}"
       fi
     done
-    echo
     if [[ $multi == 1 ]]; then
-      printf '%s%s%s\n' "$DIM" "↑↓ navigate · space select · enter confirm · esc back" "$RESET"
+      footer "↑↓ navigate · space select · enter confirm · esc back"
     else
-      printf '%s%s%s\n' "$DIM" "↑↓ navigate · enter select · esc back" "$RESET"
+      footer "↑↓ navigate · enter select · esc back"
     fi
 
     key=""
